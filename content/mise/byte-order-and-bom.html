@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | Byte Order and BOM</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="technicalBasics" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">8月 26, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/byte-order-and-bom/" rel="bookmark" title="Permanent Link to &quot;Byte Order and BOM&quot;">Byte Order and BOM</a>
+                </h2>
+
+                
+                
+
+                <h4>定义</h4>
+<p>小端模式：低地址低位，高地址高位</p>
+<p>大端模式：低地址高位，高地址低位</p>
+<p>需要注意的是，比如有如下文件：
+<img alt="utf-8 file" src="./images/big-endian%20and%20little-endian_01.jpg">
+我们是无法通过上图的信息判断这个文件是小端序还是大端序的，因为判断必须基于两点：
+1. 有递进的地址
+2. 你知道一组数字的高位或低位（或者说算数领域的写法）</p>
+<p>所以只有告诉你第一个<code>Word</code>写作<code>(0x)36623562</code>，那么你才知道这是小端序,同理，如果它写作<code>(0x)62356226</code>，则为大端序。</p>
+<h4>常见字节序</h4>
+<p>一般而言， 小端模式常见于x86架构的系统，而大端模式常见于嵌入式设备以及通信协议中,计算机的内部处理，其他的场合几乎都是大端字节序，比如网络传输和文件储存</p>
+<h3>BOM(Byte Order Mark)</h3>
+<p>BOM可以用来表示文件编码方式以及字节顺序（Byte Order），具体如下：
+<em> 00 00 fe ff UTF-32, Big Endian
+</em> fe ff 00 00 UTF-32, Little Endian
+<em> fe ff ## ## UTF-16, Big Endian
+</em> ff fe ## ## UTF-16, Little Endian
+* ef bb bf UTF-8</p>
+<p>值得注意的是UTF-8不需要BOM，尽管Unicode标准允许在UTF-8中使用BOM。
+所以不含BOM的UTF-8才是标准形式，在UTF-8文件中放置BOM主要是微软的习惯（顺便提一下：把带有BOM的小端序UTF-16称作「Unicode」而又不详细说明，这也是微软的习惯）。
+BOM（byte order mark）是为UTF-16和UTF-32准备的，用于标记字节序（byte order）。微软在UTF-8中使用BOM是因为这样可以把UTF-8和ASCII等编码明确区分开，但这样的文件在 Windows 之外的操作系统里会带来问题。</p>
+<p>以下是utf-8 file with BOM，可以看出utf-8的BOM是无法确定字节顺序的
+<img alt="utf-8 file with BOM" src="./images/big-endian%20and%20little-endian_02.jpg"></p>
+<h4>Reference</h4>
+<p><a href="http://www.ruanyifeng.com/blog/2016/11/byte-order.html">理解字节序</a>
+<a href="https://atedev.wordpress.com/2007/09/19/bom-bom-bom/">BOM BOM BOM</a>
+<a href="https://blog.csdn.net/fhzaitian/article/details/51482716">UTF-8到底需不需要 BOM？</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/byte-order-and-bom/">posted at 21:28</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/technicalbasics.html" class="tags">technicalBasics</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

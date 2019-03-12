@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | 数据类型转换</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">2月 03, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/shu-ju-lei-xing-zhuan-huan/" rel="bookmark" title="Permanent Link to &quot;数据类型转换&quot;">数据类型转换</a>
+                </h2>
+
+                
+                
+
+                <h3>前言</h3>
+<p>本文试图从计算机内存中数据的储存形式来说明数据转换时的一些问题，所以，在<code>python</code>中诸如十进制数转成十六进制数这样的转换并不能称之为转换，因为在内存中它们的储存形式相同，只是打印(print)时将其转换成人类可读的字符串<code>String</code>的表达形式不同。</p>
+<h3>整数 &lt;-&gt; 字符串（字符转换）</h3>
+<p>准确的说是整数与表达其相应整数的字符串之间的相互转换，请看下列示例：</p>
+<h4>字符串转整数</h4>
+<div class="highlight"><pre><span></span><span class="c1"># Hex str to int</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s1">&#39;0x4d&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">hex_str</span><span class="p">,</span><span class="mi">16</span><span class="p">)</span>   <span class="c1"># 77</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s1">&#39;4d&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">hex_str</span><span class="p">,</span><span class="mi">16</span><span class="p">)</span>   <span class="c1"># 77</span>
+
+<span class="c1"># Ord str to int</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s1">&#39;115&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">ord_str</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>    <span class="c1"># 77</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s1">&#39;0115&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">ord_str</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>    <span class="c1"># 77</span>
+
+<span class="c1"># Binary str to int</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s1">&#39;01001101&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">bin_str</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># 77</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s1">&#39;0x01001101&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">bin_str</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># ValueError: invalid literal for int() with base 2: &#39;0x01001101&#39;</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s1">&#39;0b01001101&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">bin_str</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># 77</span>
+</pre></div>
+
+
+<h4>任意进制数转任意字符串</h4>
+<p>通常来说，使用格式化将整数转为字符串是一种通用方法，但<code>python</code>中也提供了其它专用方法来做这件事情。</p>
+<div class="highlight"><pre><span></span><span class="c1"># 任意进制数zhuan转十进制字符串</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>    <span class="c1"># &#39;77&#39;</span>
+<span class="nb">str</span><span class="p">(</span><span class="mh">0x4d</span><span class="p">)</span>  <span class="c1"># &#39;77&#39;</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">4</span><span class="n">d</span><span class="p">)</span>    <span class="c1"># SyntaxError: invalid syntax</span>
+<span class="c1"># 需要注意的是数值前若有一个零，那么该数值会被认为是八进制数，导致结果不同</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>   <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 若数值前有两个或两个以上的零，则无效零将被舍去</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">0010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 以上结果为python2.x上运行所得，在python3.x上均会报错：SyntaxError: invalid token</span>
+<span class="c1"># 所以要想在python3.x上转换八进制数，需要写成如下格式</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+
+<span class="c1"># 十进制数字转十六进制字符串</span>
+<span class="nb">hex</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>   <span class="c1"># &#39;0x4d&#39;</span>
+<span class="c1"># 十进制数字转八进制字符串</span>
+<span class="nb">oct</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>   <span class="c1"># &#39;0115&#39;</span>
+<span class="c1"># 十进制数字转二进制字符串</span>
+<span class="nb">bin</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>   <span class="c1"># &#39;0b1001101&#39;</span>
+
+<span class="c1"># 字符串格式化方法</span>
+<span class="n">number</span> <span class="o">=</span> <span class="mi">77</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>    <span class="c1"># &#39;4d&#39;</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%#x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>   <span class="c1"># &#39;0x4d&#39;</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%o</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>    <span class="c1"># &#39;115&#39;</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%#o</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>   <span class="c1"># &#39;0115&#39;</span>
+<span class="c1"># 值得注意的是需要保留数字前无效的0时可以这么做，详细见</span>
+<span class="c1"># 加入&#39;0&#39;，保留5位数字，若&#39;5&#39;的前面没有&#39;0&#39;，即&quot;%5d&quot;，则使用空格填充，总位数仍然占据5格</span>
+<span class="n">int_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%05d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>    <span class="c1"># &#39;00077&#39;</span>
+<span class="c1"># 若是要保持数字为8位，&#39;0&#39; 后面则加上数字&#39;8&#39;</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%08x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>   <span class="c1"># &#39;0000004d&#39;</span>
+<span class="c1"># 若同时加入&#39;#&#39;，&#39;#&#39;要在&#39;0&#39;之前，但这时不会出现&#39;0x0000004d&#39;这样的结果，所以说&#39;8&#39;代表总位数，此时&#39;0x&#39;也会算入总位数内</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%#08x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>  <span class="c1"># &#39;0x00004d&#39;</span>
+
+<span class="c1"># python 2.6 新增字符串格式化方法同理</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;{:#010x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>   <span class="c1"># &#39;0x0000004d&#39;</span>
+<span class="c1"># 除了转成八进制时加入&#39;#&#39;和以往不同</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s2">&quot;{:#o}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>      <span class="c1"># &#39;0o115&#39;</span>
+<span class="c1"># 新增了二进制的转换</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s2">&quot;{:b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>       <span class="c1"># &#39;1001101&#39;</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s2">&quot;{:#b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>      <span class="c1"># &#39;0b1001101&#39;</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s2">&quot;{:#010b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>   <span class="c1"># &#39;0b01001101&#39;</span>
+</pre></div>
+
+
+<h4>ascii/unicode码值和字符相互转换</h4>
+<p>这看起来有点像是整数和字符串的转换，但其实是字符(Character)与整数(struct)的转换，其依赖于一种映射关系。</p>
+<div class="highlight"><pre><span></span><span class="c1"># char to ascii/unicode</span>
+<span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>   <span class="c1"># 97</span>
+<span class="nb">ord</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>  <span class="c1"># 97</span>
+
+<span class="c1"># ascii/unicode to char</span>
+<span class="nb">chr</span><span class="p">(</span><span class="mi">97</span><span class="p">)</span>    <span class="c1"># &#39;a&#39;</span>
+<span class="nb">unichr</span><span class="p">(</span><span class="mi">97</span><span class="p">)</span> <span class="c1"># u&#39;a&#39;</span>
+<span class="c1"># 格式化也可使char转换成ascii码值</span>
+<span class="s2">&quot;</span><span class="si">%c</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="mi">97</span>  <span class="c1"># &#39;a&#39;</span>
+</pre></div>
+
+
+<p>是不是有点懵了？在了解字符(Character)和字符流(Character Streams)之前，我们要先了解字节流(bytestream)</p>
+<h3>字节流(bytestream) &lt;-&gt; 整数（struct）</h3>
+<p>在这里又引入了一个新概念：字节流，什么是字节流？</p>
+<blockquote>
+<p>A bytestream is a sequence of bytes. Typically, each byte is a 8-bit quantity (octets), and so the term octet stream is sometimes used interchangeably. An octet may be encoded as a sequence of 8 bits in multiple different ways (see endianness) so there is no unique and direct translation between bytestreams and bitstreams.</p>
+</blockquote>
+<p>翻译一下就是字节流是一个字节序列。通常，每个字节是8位bit，因此术语八位字节流有时可互换使用。八位字节可以以多种不同方式编码为8位序列（参见字节序），因此在字节流和比特流之间不存在唯一且直接的转换。
+读了上面这段话，可能会产生新的疑问：什么是比特流？</p>
+<blockquote>
+<p>A bitstream (or bit stream), also known as binary sequence, is a sequence of bits. </p>
+</blockquote>
+<p>比特流(bitstream)，也称为二进制序列，是比特序列。</p>
+<p>总结一下，字节流(bytestream)就是八位比特流(bitstream)，可以表示为<code>b'\x31\x32\x61\x62'</code>，但如果是比特流，就只能写成这样<code>'00110001001100100110000101100010'</code>，而不是<code>'\b00110001\b00110010\b01100001\b01100010'</code>，换句话来说，如果给你一个比特流，你是不知道几个bit是一个单位的，这就是为什么串口通信时我们要设置数据位、校验位、停止位的原因，如果是1位起始位+8位数据位+1位终止位，那就是10位，如果波特率都为9600(baud/s)，根据公式：<code>比特率(bit/s)=波特率(baud/s) * 单个调制状态对应的二进制位数</code>，现在每个baud是10bit，那么比特率就为<code>9600(baud/s) * 10 = 96000(bit/s)</code>，而如果还有1位校验位，那么比特率就为<code>9600(baud/s) * 11 = 105600(bit/s)</code>，所以，从通信角度来说，虽然两者的信息量一致(8位数据位)，但传送的数据量显然后者更多。</p>
+<p>最后，比特流更多的见于传输协议，而字节流更多的见于文件I/O，因为python解析文件是按照字节来解析的，所以这里我们讨论的是字节流(bytestream)</p>
+<h4>字节流转整数</h4>
+<p>一个二进制文件的数据如下:
+<img alt="bin file" src="images/binfile01.jpg"></p>
+<p>图中数据是以十六进制显示的，最右边是解码以后的数据，当然，这时候我们是不知道这个文件的编码的，事实上字节流文件本身被看作是没有编码的，而我们也不必知道该文件的编码方式，字节流转整数说白了就是按字节读出数据之后按大端(big-endian)、小端(little-endian)和长度来解码，原始数据以二进制存储在磁盘上的文件里，如果文件里的数据以大端序存放，且每个数据长度为<code>32bits</code>，那我们读出前四个<code>byte</code>，就是比特字符串<code>b'\x31\x32\x61\x62'</code>，表示<code>0x31326162</code>或者说十进制<code>825385314</code>，而如果以小端序存放，则表示<code>0x62613231</code>或十进制<code>1650537009</code></p>
+<h4>字节流转整数</h4>
+<p>我们可以使用<code>ord()</code>一个字节一个字节的转换。</p>
+<div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;ord():返回单字符字符串的整数序号。</span>
+<span class="sd">ord(...)</span>
+<span class="sd">    ord(c) -&gt; integer</span>
+<span class="sd">    Return the integer ordinal of a one-character string.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">filepath</span> <span class="o">=</span> <span class="s1">&#39;binfile.bin&#39;</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">binfile</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">byte</span> <span class="o">=</span> <span class="n">binfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">byte</span><span class="p">))</span>    <span class="c1"># 这里为了方便查看结果，转为字符串形式</span>
+</pre></div>
+
+
+<p>也可以使用struct库来转换整个二进制字符串，这样可以按照多个字节一组来转换，struct库甚至可以设置以何种比特序(Byte Order)即大端序或小端序来解析(parse)：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 具体来说，可以动手尝试创建一个bitfile，这里用到的bitfile详见下文图片</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="n">filepath</span> <span class="o">=</span> <span class="s1">&#39;binfile.bin&#39;</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">binfile</span><span class="p">:</span>
+    <span class="c1"># &#39;rb&#39;读出来的是字节字符串`bytes()`，形如&#39;\x31\x32&#39;，如果此时使用`list(byteString)`将其转为list，那它每一项仍是以字节字符串格式存储</span>
+    <span class="c1"># 这与转成字节数组`bytearray(byteString)`不同，在字节数组中，数据是以二进制数字形式保存的</span>
+    <span class="c1"># 所以如果需要改写，那字节数组直接可以使用`0x31`或`49`等数字进行赋值，而list则需要使用`b&#39;\x31&#39;`这样的字节字符串进行赋值</span>
+    <span class="n">byteString</span> <span class="o">=</span> <span class="n">binfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>              <span class="c1"># 注意这里是指 1 byte, 即 8 bits</span>
+    <span class="n">byteTuple</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;BBBB&#39;</span><span class="p">,</span> <span class="n">byteString</span><span class="p">)</span>  
+    <span class="k">print</span><span class="p">(</span><span class="n">byteTuple</span><span class="p">)</span>                    <span class="c1"># (49, 50, 97, 98)</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">byteTuple</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:x}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>   <span class="c1"># 31      32      33      34</span>
+
+<span class="c1"># 字节串转成8位unsigned char，单字节没有大端序和小端序分别</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;BBBB&#39;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">))</span>   <span class="c1"># (49, 50, 97, 98)</span>
+
+<span class="c1"># 字节串转成32位unsigned long</span>
+<span class="c1"># little-endian（低字节低位，高字节高位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;L&#39;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">))</span>     <span class="c1"># (1650537009,) -&gt; 0x62613231</span>
+<span class="c1"># big-endian（低字节高位，高字节低位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&gt;L&#39;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">))</span>     <span class="c1"># (825385314,)  -&gt; 0x31326162</span>
+</pre></div>
+
+
+<h4>整数转字节流</h4>
+<div class="highlight"><pre><span></span><span class="c1"># 8位unsigned char转成字节串</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;BBBB&#39;</span><span class="p">,</span> <span class="mi">49</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">)</span>   <span class="c1"># b&#39;\x31\x32\x61\x62&#39;</span>
+
+<span class="c1"># 32位unsigned long转成字节串</span>
+<span class="c1"># little-endian（低字节低位，高字节高位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&lt;L&#39;</span><span class="p">,</span> <span class="mi">1650537009</span><span class="p">)</span>        <span class="c1"># b&#39;\x31\x32\x61\x62&#39;</span>
+<span class="c1"># big-endian（低字节高位，高字节低位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;L&#39;</span><span class="p">,</span> <span class="mi">825385314</span><span class="p">)</span>         <span class="c1"># b&#39;\x31\x32\x61\x62&#39;</span>
+</pre></div>
+
+
+<h3>字节流(bytestream) &lt;-&gt; 字符流(Character Streams)</h3>
+<p>这两者的转换就是编码问题，通俗来讲，字符流(Character Streams)是指按照编码决定了将n个字节为一组的字节流(bytestream)，比如，解析(parse)'ascii'编码的文件是一个字节一组，解析'utf-16'的文件是两个字节一组。
+字节流(bytestream)与字符流(Character Streams)的转换和字节流(bytestream)与整数的转换不同的地方在于后者只是算数形式上的转换（二进制到十进制），而前者是按照某一种编码（映射）解析文件。
+比如还是这个二进制文件:
+<img alt="bin file" src="images/object_type_conversion00.jpg">
+再加上ASCII码表以说明相互关系：
+|  二进制   | 十进制 | 十六进制 | 字符  |
+| :-------: | :----: | :------: | :---: |
+| 0011 0001 |   49   |    31    |  '1'  |
+| 0011 0010 |   50   |    32    |  '2'  |
+| 0110 0001 |   97   |    61    |  'a'  |
+| 0110 0010 |   98   |    62    |  'b'  |</p>
+<p>其他编码同理，通常来说，由于<code>python2</code>与<code>python3</code>字符串的不同，所以在打开和关闭文件时，应该做好转换，在处理过程中，始终使用<code>unicode</code>编码，避免中途转换编码，减少错误的产生。</p>
+<h4>字节流转字符流（decode）</h4>
+<div class="highlight"><pre><span></span><span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>   <span class="c1"># u&#39;12ab&#39;</span>
+<span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-16&#39;</span><span class="p">)</span>  <span class="c1"># u&#39;\u3231\u6261&#39; ，即&#39;ㄲ扡&#39;</span>
+
+<span class="c1"># 如果字节流(bytestream)是纯数字且为&#39;ascii&#39;编码，也可使用下面的方式，不过结果不是字符流而是解析以后的整数</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x31\x32</span><span class="s1">&#39;</span><span class="p">)</span>   <span class="c1"># 12</span>
+<span class="c1"># 与普通的转换相比：</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;0x31&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>    <span class="c1"># 49</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;0x32&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>    <span class="c1"># 50</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;0x3132&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>  <span class="c1"># 12594</span>
+<span class="c1"># very very confusing. orz..</span>
+<span class="c1"># Forgot it.</span>
+<span class="c1"># Let&#39;s continue good good study now...</span>
+</pre></div>
+
+
+<h4>字符流转字节流（encode）</h4>
+<div class="highlight"><pre><span></span><span class="s1">&#39;12ab&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>   <span class="c1"># &#39;12ab&#39;</span>
+<span class="c1"># 打印&#39;12ab&#39;但实际编码为b&#39;\x31\x32\x61\x62&#39;</span>
+</pre></div>
+
+
+<h3>Reference</h3>
+<p><a href="http://lixingcong.github.io/2016/03/06/convert-data-in-python/">python整数、字符串、字节串相互转换</a>
+<a href="https://draapho.github.io/2016/11/24/1621-python-string/">python 字符串处理</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/shu-ju-lei-xing-zhuan-huan/">posted at 16:07</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | python中的效率问题</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python,problem" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">5月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonzhong-de-xiao-lu-wen-ti/" rel="bookmark" title="Permanent Link to &quot;python中的效率问题&quot;">python中的效率问题</a>
+                </h2>
+
+                
+                
+
+                <h3>python的效率问题</h3>
+<h4><code>for...in...</code> or <code>while</code></h4>
+<p>在python中严格意义上<code>for...in...</code>并不是用于循环的，所以当使用<code>for i in range(0, number)</code>来做循环时，在python2.7下与<code>while</code>相比，在<code>number&lt;10</code>时，<code>while</code>效率比其高2~5倍，超过10，则其效率之比逐渐缩小，无限趋向于相等，通常此时<code>while</code>效率仍比<code>for...in...</code>高，内存使用率上来说，<code>for...in...</code>由于生成了一个列表，内存占用远大于<code>while</code>。若使用<code>xrange</code>代替<code>range</code>，情况大致和之前一致，只是<code>number&gt;1000</code>后有较大概率<code>while</code>被<code>for...in...</code>略微反超。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="n">testList</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">length</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;list length = </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">length</span><span class="p">)</span>
+
+<span class="n">start</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">length</span><span class="p">):</span>
+    <span class="n">testList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100000</span><span class="p">))</span>
+<span class="n">end</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;for  &quot;</span><span class="p">,</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+
+<span class="n">start</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">while</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+    <span class="n">testList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100000</span><span class="p">))</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="n">end</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;while&quot;</span><span class="p">,</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>在字典中查找</h2>
+<p>在字典中查找<code>key</code>时，不要使用<code>k in dict.keys()</code>，而应该使用<code>k in dict</code>的形式，后者是根据<code>hash</code>来查找的，与在<code>set</code>中查找运算量相同，而前者在<code>python2</code>中返回一个列表<code>&lt;type 'list'&gt;</code>，在<code>python3</code>中返回一个对象<code>&lt;class 'dict_keys'&gt;</code>。
+当处于<code>for...in...</code>结构时，前者在<code>python2</code>中返回一个列表，<code>iterkeys()</code>才返回一个迭代器，在<code>python3</code>中始终返回一个迭代器（隐式），详见<a href="https://stackoverflow.com/a/3617008">stackoverflow</a></p>
+<h2>is None</h2>
+<p>对于<code>None</code>来说，因为其有且仅有一个，所以可以使用<code>is None</code>代替<code>== None</code>，而事实上使用<code>is</code>速度更快，因为<code>is</code>是一个快速的<code>id</code>比较，而<code>==</code>需要调用内置函数<code>__eq__()</code>并查找被比较的值进行比较。</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonzhong-de-xiao-lu-wen-ti/">posted at 17:16</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>
