@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | articles tagged "pytz"</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li class="ephemeral selected"><a href="/tag/pytz.html">pytz</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">3月 08, 2019</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/datetimezhi-nan/" rel="bookmark" title="Permanent Link to &quot;datetime指南&quot;">datetime指南</a>
+                </h2>
+
+                
+                
+
+                <h1>理想(naive)的时间和真实(aware)的时间</h1>
+<p>在开始之前，我们要知道时间本身就是人为划分的，以经度为标准将地球划分为24个时区，这样，全世界人民都能在早上六点看到初升的太阳。而这里的<code>六点</code>就可以被认为是一种理想(naive)的时间，真实(aware)时间则是本初子午线零时区的时间，当然，这个时间也是人为规定的，就像坐标轴总是需要一个原点，手册上把其称为<code>naive</code>和<code>aware</code>，我没有找到更加合适的翻译，可能意思有点出入，简单的来说就是是否考虑时区问题，即在<code>datetime.datetime</code>类中<code>tzinfo = None</code>的为理想时间。但是，问题并不是那么简单，即使在同一个时区，不同地区计算时间的方式也不一样，比如某些国家使用夏令时，即使用<code>LMT</code>时间，与简单地加减时区计算出来的时间会有些出入，所以，为了正确计算出全球各地的本地时间，就需要<code>pytz</code>库了。</p>
+<h1>datatime模块的类</h1>
+<ul>
+<li><code>datetime.date</code>: 理想化的日期对象，假设使用格里高利历(Gregorian calendar)，有<code>year</code>, <code>month</code>, <code>day</code>三个属性  </li>
+<li><code>datetime.time</code>: 理想化的时间对象，不考虑闰秒，即认为一天总是<code>24*60*60</code>秒，有<code>hour</code>, <code>minute</code>, <code>second</code>, <code>microsecond</code>, <code>tzinfo</code>五个属性  </li>
+<li><code>datetime.datetime</code>: <code>datetime.date</code>和<code>datetime.time</code>的组合，有八个属性</li>
+<li><code>datetime.timedelta</code>: 表示两个<code>datetime.date</code>, <code>datetime.time</code>或者<code>datetime.datetime</code>实例之间的差，分辨率为微秒(microsecond)  </li>
+<li><code>datetime.tzinfo</code>: 时区信息  </li>
+<li><code>datetime.timezone</code>: 把<code>tzinfo</code>抽象基类实现为与<code>UTC</code>的固定偏移量的类，即只考虑时区对时间的影响，<strong>不考虑同一时区不同偏移位置或因历史原因对民用时间进行的更改的位置的时区信息</strong>。</li>
+</ul>
+<h1>不同时间格式的转换</h1>
+<p>在<code>python</code>中，大概有这几种时间的储存方式：<code>datetime</code>、<code>timestamp</code>、<code>date_string</code>、<code>timetuple</code>和<code>Gregorian ordinal</code>，其中Gregorian ordinal比较少见。
+<code>datetime</code>库提供了这几种的转换，以下方法如无特殊说明，则代表<code>datetime.datetime</code>和<code>datetime.date</code>类都支持。</p>
+<h2>datetime &lt;-&gt; timestamp</h2>
+<p>时间戳(timestamp)本质是从<code>1970-01-01 00:00:00</code>到现在的秒数，通常来说，我们可以通过<code>time.time()</code>获取当前时间戳，并通过<code>fromtimestamp(timestamp)</code>将其转为datatime，反之则使用
+<code>datetime.timestamp()</code>，注意<code>data</code>类不支持<code>timestamp()</code>。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="n">dt_utc_change</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime changed:&#39;</span><span class="p">,</span> <span class="n">dt_utc_change</span><span class="p">))</span>
+<span class="n">dt_ts</span> <span class="o">=</span> <span class="n">dt_utc_change</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;timestamp:&#39;</span><span class="p">,</span> <span class="n">dt_ts</span><span class="p">))</span>
+
+<span class="n">dt_utc_1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc_1 datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc_1</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;dt_utc_1.tzinfo == None:&#39;</span><span class="p">,</span><span class="n">dt_utc_1</span><span class="o">.</span><span class="n">tzinfo</span> <span class="o">==</span> <span class="bp">None</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;dt_utc.tzinfo == None:&#39;</span><span class="p">,</span><span class="n">dt_utc</span><span class="o">.</span><span class="n">tzinfo</span> <span class="o">==</span> <span class="bp">None</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime:             datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">utc datetime changed:     datetime.datetime(1970, 1, 1, 2, 0, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">timestamp:                7200.0</span>
+<span class="sd">utc_1 datetime:           datetime.datetime(1970, 1, 1, 0, 0)</span>
+<span class="sd">dt_utc_1.tzinfo == None:  True</span>
+<span class="sd">dt_utc.tzinfo == None:    False</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>值得注意的是对于<code>utcfromtimestamp()</code>来说，它返回的时间是理想(naive)时间而不是真实(aware)时间</p>
+<h2>datetime &lt;-&gt; date_string</h2>
+<p><code>python3.7</code>新增了对于形如<code>YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]</code>这样标准日期字符串的支持，两者可通过<code>fromisoformat(date_string)</code>, <code>isoformat()</code>自由转换，注意，<code>date</code>, <code>time</code>, <code>datetime</code>类均支持两者转换。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="s1">&#39;2019-01-02 12:30:59.000000&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime:&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime isoformat:&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">datetime:            datetime.datetime(2019, 1, 2, 12, 30, 59)</span>
+<span class="sd">datetime isoformat:  2019-01-02T12:30:59</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>除此以外，<code>date</code>, <code>time</code>, <code>datetime</code>类还支持使用<code>strftime()</code>方法改变输出<code>date_string</code>的格式，而<code>strftime()</code>等同于<code>__format__()</code>方法并推荐使用前者，除此以外，<code>ctime()</code>可以输出符合C标准的字符串。<code>datetime.strptime(date_string, format)</code>同理，但只支持<code>datetime</code>类，有关于自定义输出格式，请见<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior">strftime() and strptime() Behavior</a></p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime string:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="n">date_str</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y.%m.</span><span class="si">%d</span><span class="s2"> %H:%M:%S %z&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;string format changed:&#39;</span><span class="p">,</span> <span class="n">date_str</span><span class="p">))</span>
+<span class="n">ctime_str</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">ctime</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ctime format string:&#39;</span><span class="p">,</span> <span class="n">ctime_str</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime string:      1970-01-01 00:00:00+00:00</span>
+<span class="sd">string format changed:    1970.01.01 00:00:00 +0000</span>
+<span class="sd">ctime format string:      Thu Jan  1 00:00:00 1970</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h2>datetime -&gt; timetuple</h2>
+<p>可以通过<code>timetuple()</code>来将<code>datatuple</code>转为<code>timetuple</code>，但没有提供反向转换的函数</p>
+<div class="highlight"><pre><span></span><span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc timetuple:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime:        datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">utc timetuple:       time.struct_time(tm_year=1970, tm_mon=1, tm_mday=1, tm_hour=0, tm_min=0, tm_sec=0, tm_wday=3, tm_yday=1, tm_isdst=-1)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h2>datetime &lt;-&gt; Gregorian ordinal</h2>
+<p>与时间戳(timestamp)不同，格里高利序数(Gregorian ordinal)即公历序数是以天来计算的，并且从<code>0001-01-01</code>开始。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt_1970</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromordinal</span><span class="p">(</span><span class="mi">719163</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:35} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ordinal 719163 to datetime:&#39;</span><span class="p">,</span> <span class="n">dt_1970</span><span class="p">))</span>
+<span class="n">ordinal</span> <span class="o">=</span> <span class="n">dt_1970</span><span class="o">.</span><span class="n">toordinal</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:35} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime 1970-01-01 to ordinal:&#39;</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">))</span>
+<span class="n">dt_0001</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromordinal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>      <span class="c1">#  ordinal must be &gt;= 1</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:35} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ordinal 1 to datetime:&#39;</span><span class="p">,</span> <span class="n">dt_0001</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">ordinal 719163 to datetime:         datetime.date(1970, 1, 1)</span>
+<span class="sd">datetime 1970-01-01 to ordinal:     719163</span>
+<span class="sd">ordinal 1 to datetime:              datetime.date(1, 1, 1)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h1>时间运算</h1>
+<p><code>datetime</code>, <code>date</code>, <code>time</code>类可以和各自对应的<code>timedelta</code>类加减，值得注意的是<code>aware</code>时间的<code>datetime</code>对象，只能和<code>aware</code>时间的<code>datetime</code>对象进行运算，<code>native</code>同理。</p>
+<div class="highlight"><pre><span></span><span class="n">dt_befre</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">dt_after</span> <span class="o">=</span> <span class="n">dt_befre</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:10} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime:&#39;</span><span class="p">,</span> <span class="n">dt_befre</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:10} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime:&#39;</span><span class="p">,</span> <span class="n">dt_after</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">datetime:  datetime.datetime(1970, 1, 2, 9, 30)</span>
+<span class="sd">datetime:  datetime.datetime(1970, 1, 2, 6, 30)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h1>获得当前时间</h1>
+<div class="highlight"><pre><span></span><span class="c1"># coding: utf-8</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">pytz</span>
+
+<span class="n">tz_cn</span>  <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+<span class="c1"># 等同于dt_today = datetime.fromtimestamp(time.time())</span>
+<span class="c1"># 等同于dt_today = datetime.datetime.now(tz=None)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;today datetime:&#39;</span><span class="p">,</span> <span class="n">dt_today</span><span class="p">))</span>
+<span class="n">dt_now_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn now datetime:&#39;</span><span class="p">,</span> <span class="n">dt_now_cn</span><span class="p">))</span>
+<span class="n">dt_now_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc now datetime:&#39;</span><span class="p">,</span> <span class="n">dt_now_utc</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">today datetime:      datetime.datetime(2019, 3, 7, 10, 11, 55, 359826)</span>
+<span class="sd">cn now datetime:     datetime.datetime(2019, 3, 7, 10, 11, 55, 359826, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">utc now datetime:    datetime.datetime(2019, 3, 7, 2, 11, 55, 359826)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>注意如果设置了<code>timezone</code>，<code>print()</code>时会在末尾打印
+可见如果没有设置<code>timezone</code>，表示的时间为理想时间，就如同这里的<code>dt_today</code>和<code>dt_now_utc</code>，而<code>dt_now_cn</code>则不同，假如同时刻我们有朋友在本初子午线附近，那么就可以通过<code>dt_now_cn</code>推算出其当地时间。</p>
+<h1>时区转换</h1>
+<p>要转换时区，可以使用<code>astimezone()</code>方法，同时<code>datetime</code>类还有一个容易误解的<code>replace()</code>方法，<code>datetime.astimezone(tz=None)</code>与<code>datetime.replace([year[, month[, day[, hour[, minute[, second[, microsecond[, tzinfo]]]]]]]])</code>的区别在于，前者会根据设置的<code>tzinfo</code>调整日期和时间，而后者只修改<code>tzinfo</code>属性。
+对于<code>astimezone()</code>，如果不带参数调用（或使用<code>tz = None</code>），则假定系统本地时区。转换后的<code>datetime</code>实例的<code>.tzinfo</code>属性将设置为时区实例，其中包含从OS获取的区域名称和偏移量。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="c1"># or：dt.replace(tzinfo=pytz.timezone(&#39;UTC&#39;))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime with tzinfo:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime without tzinfo:&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
+<span class="n">dt_utc_to_us</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz_us</span><span class="p">)</span>
+<span class="n">dt_to_us</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz_us</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:40} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime UTC to US/Eastern:&#39;</span><span class="p">,</span> <span class="n">dt_utc_to_us</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:40} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime Asia/Shanghai to US/Eastern:&#39;</span><span class="p">,</span> <span class="n">dt_to_us</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">datetime with tzinfo:     datetime.datetime(1970, 1, 2, 9, 30, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">datetime without tzinfo:  datetime.datetime(1970, 1, 2, 9, 30)</span>
+<span class="sd">datetime UTC to US/Eastern:              datetime.datetime(1970, 1, 2, 4, 30, tzinfo=&lt;DstTzInfo &#39;US/Eastern&#39; EST-1 day, 19:00:00 STD&gt;)</span>
+<span class="sd">datetime Asia/Shanghai to US/Eastern:    datetime.datetime(1970, 1, 1, 20, 30, tzinfo=&lt;DstTzInfo &#39;US/Eastern&#39; EST-1 day, 19:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>需要注意的是，在<code>python3.2</code>之前，<code>datetime</code>库是没有<code>timezone</code>类的，而<code>tzinfo</code>类只是抽象类，在使用前需要手工派生一个子类，这也是我们使用<code>pytz</code>库的原因，它提供了大多数地区的<code>tzinfo</code>方法和<code>pytz.timezone</code>类以及一些方法。
+我们当然可以使用<code>astimezone()</code>来转换时区，但是，对于许多时区，使用标准日期时间构造函数的<code>tzinfo</code>参数与<code>pytz</code>不兼容。对于没有夏令时转换的时区，它是安全的，例如<code>UTC</code>。（然而<code>Asia/Shanghai</code>不用夏令时，仍然却是日光节约时间(LMT)，反而<code>astimezone()</code>的结果是正确的）。</p>
+<p>问题出现于直接在<code>datetime.datetime()</code>类中进行赋值，某些地区可能会有偏差，比如<code>Asia/Shanghai</code>, <code>Europe/Amsterdam</code>等，会出现<code>LMT</code>时间，而同样的<code>tzinfo</code>用于<code>now()</code>, <code>fromtimestamp</code>则是正确时间，<code>Amsterdam</code>的确是实行夏令时的，所以返回日光节约时间(LMT)，但是<code>Shanghai</code>显然不应该为<code>LMT</code>时间，而应该是<code>China Standard Time(CST)</code></p>
+<div class="highlight"><pre><span></span><span class="n">tz_cn</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn timeinfo:&#39;</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn</span><span class="p">))</span>
+<span class="c1"># The following conditions are normal</span>
+<span class="n">dt_now_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz_cn</span><span class="p">)</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn now datetime:&#39;</span><span class="p">,</span> <span class="n">dt_now_cn</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn 1970 datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;python</span>
+<span class="sd">cn timeinfo:    &lt;DstTzInfo &#39;Asia/Shanghai&#39; LMT+8:06:00 STD&gt;</span>
+<span class="sd">cn datetime:    datetime.datetime(1970, 1, 2, 9, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; LMT+8:06:00 STD&gt;)</span>
+<span class="sd">cn now datetime:datetime.datetime(2019, 3, 7, 15, 23, 15, 477210, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">utc datetime:   datetime.datetime(1970, 1, 1, 8, 0, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>为了解决这个问题，<code>pytz</code>库提供了<code>normalize()</code>和<code>localize()</code>这两个方法，前者用于<code>aware</code>时间，后者用于<code>naive</code>时间，感觉这两个方法有点像<code>datetime.timezone</code>类，不考虑同一时区不同偏移位置或因历史原因对民用时间进行的更改的情况</p>
+<div class="highlight"><pre><span></span><span class="n">tz_cn</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_cn_lmt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">)</span>
+<span class="n">dt_cn_cst</span> <span class="o">=</span> <span class="n">tz_cn</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">dt_cn_lmt</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn LMT datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn_lmt</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn CST datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn_cst</span><span class="p">))</span>
+
+<span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">dt_cn</span> <span class="o">=</span> <span class="n">tz_cn</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn CST datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">cn LMT datetime:     datetime.datetime(1970, 1, 2, 9, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; LMT+8:06:00 STD&gt;)</span>
+<span class="sd">cn CST datetime:     datetime.datetime(1970, 1, 2, 9, 24, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">cn CST datetime:     datetime.datetime(1970, 1, 2, 9, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>所以处理时间的首选方式是始终以<code>UTC</code>工作，仅在输出供人类读取时转换成本地时间：</p>
+<div class="highlight"><pre><span></span><span class="n">tz_cn</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime:        datetime.datetime(1970, 1, 2, 17, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>这种方法可以尽可能的减少<code>pytz</code>库的依赖，明白<code>pytz</code>本身起的作用是很关键的，因为现在也有一些其它的库比如<a href="https://pendulum.eustace.io/blog/a-faster-alternative-to-pyz.html">Pendulum - A faster (and better) alternative to pytz</a></p>
+<h1>reference</h1>
+<p>其余可以参考<code>datetime</code>的手册和一些其它资料，其中手册是一定要读的：
+<a href="https://docs.python.org/3/library/datetime.html">datetime — Basic date and time types</a>
+<a href="http://pytz.sourceforge.net/">pytz - World Timezone Definitions for Python</a></p>
+<p><a href="https://tech.glowing.com/cn/dealing-with-timezone-in-python/">Python中的时区处理</a>
+<a href="https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000/001431937554888869fb52b812243dda6103214cd61d0c2000">datetime - 廖雪峰的官方网站</a>
+<a href="https://www.programiz.com/python-programming/datetime">Python datetime</a>
+<a href="https://blog.liang2.tw/posts/2015/09/datetime-sqlite/">Datetime in SQLite and Python</a>
+<a href="http://www.dannysite.com/blog/122/">datetime时区转换</a>
+<a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c03/p16_manipulate_dates_involving_timezone.html">结合时区的日期操作 — python3-cookbook 3.0.0 文档</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/datetimezhi-nan/">posted at 22:51</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/datetime.html" class="tags">datetime</a>
+                    &nbsp;<a href="/tag/pytz.html" class="tags selected">pytz</a>
+                    &nbsp;<a href="/tag/time.html" class="tags">time</a>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

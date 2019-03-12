@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | Articles by Dream-Trace</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+
+                <li class="ephemeral selected"><a href="/author/dream-trace.html">Dream-Trace</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">3月 08, 2019</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/datetimezhi-nan/" rel="bookmark" title="Permanent Link to &quot;datetime指南&quot;">datetime指南</a>
+                </h2>
+
+                
+                
+
+                <h1>理想(naive)的时间和真实(aware)的时间</h1>
+<p>在开始之前，我们要知道时间本身就是人为划分的，以经度为标准将地球划分为24个时区，这样，全世界人民都能在早上六点看到初升的太阳。而这里的<code>六点</code>就可以被认为是一种理想(naive)的时间，真实(aware)时间则是本初子午线零时区的时间，当然，这个时间也是人为规定的，就像坐标轴总是需要一个原点，手册上把其称为<code>naive</code>和<code>aware</code>，我没有找到更加合适的翻译，可能意思有点出入，简单的来说就是是否考虑时区问题，即在<code>datetime.datetime</code>类中<code>tzinfo = None</code>的为理想时间。但是，问题并不是那么简单，即使在同一个时区，不同地区计算时间的方式也不一样，比如某些国家使用夏令时，即使用<code>LMT</code>时间，与简单地加减时区计算出来的时间会有些出入，所以，为了正确计算出全球各地的本地时间，就需要<code>pytz</code>库了。</p>
+<h1>datatime模块的类</h1>
+<ul>
+<li><code>datetime.date</code>: 理想化的日期对象，假设使用格里高利历(Gregorian calendar)，有<code>year</code>, <code>month</code>, <code>day</code>三个属性  </li>
+<li><code>datetime.time</code>: 理想化的时间对象，不考虑闰秒，即认为一天总是<code>24*60*60</code>秒，有<code>hour</code>, <code>minute</code>, <code>second</code>, <code>microsecond</code>, <code>tzinfo</code>五个属性  </li>
+<li><code>datetime.datetime</code>: <code>datetime.date</code>和<code>datetime.time</code>的组合，有八个属性</li>
+<li><code>datetime.timedelta</code>: 表示两个<code>datetime.date</code>, <code>datetime.time</code>或者<code>datetime.datetime</code>实例之间的差，分辨率为微秒(microsecond)  </li>
+<li><code>datetime.tzinfo</code>: 时区信息  </li>
+<li><code>datetime.timezone</code>: 把<code>tzinfo</code>抽象基类实现为与<code>UTC</code>的固定偏移量的类，即只考虑时区对时间的影响，<strong>不考虑同一时区不同偏移位置或因历史原因对民用时间进行的更改的位置的时区信息</strong>。</li>
+</ul>
+<h1>不同时间格式的转换</h1>
+<p>在<code>python</code>中，大概有这几种时间的储存方式：<code>datetime</code>、<code>timestamp</code>、<code>date_string</code>、<code>timetuple</code>和<code>Gregorian ordinal</code>，其中Gregorian ordinal比较少见。
+<code>datetime</code>库提供了这几种的转换，以下方法如无特殊说明，则代表<code>datetime.datetime</code>和<code>datetime.date</code>类都支持。</p>
+<h2>datetime &lt;-&gt; timestamp</h2>
+<p>时间戳(timestamp)本质是从<code>1970-01-01 00:00:00</code>到现在的秒数，通常来说，我们可以通过<code>time.time()</code>获取当前时间戳，并通过<code>fromtimestamp(timestamp)</code>将其转为datatime，反之则使用
+<code>datetime.timestamp()</code>，注意<code>data</code>类不支持<code>timestamp()</code>。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="n">dt_utc_change</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime changed:&#39;</span><span class="p">,</span> <span class="n">dt_utc_change</span><span class="p">))</span>
+<span class="n">dt_ts</span> <span class="o">=</span> <span class="n">dt_utc_change</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;timestamp:&#39;</span><span class="p">,</span> <span class="n">dt_ts</span><span class="p">))</span>
+
+<span class="n">dt_utc_1</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc_1 datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc_1</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;dt_utc_1.tzinfo == None:&#39;</span><span class="p">,</span><span class="n">dt_utc_1</span><span class="o">.</span><span class="n">tzinfo</span> <span class="o">==</span> <span class="bp">None</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;dt_utc.tzinfo == None:&#39;</span><span class="p">,</span><span class="n">dt_utc</span><span class="o">.</span><span class="n">tzinfo</span> <span class="o">==</span> <span class="bp">None</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime:             datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">utc datetime changed:     datetime.datetime(1970, 1, 1, 2, 0, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">timestamp:                7200.0</span>
+<span class="sd">utc_1 datetime:           datetime.datetime(1970, 1, 1, 0, 0)</span>
+<span class="sd">dt_utc_1.tzinfo == None:  True</span>
+<span class="sd">dt_utc.tzinfo == None:    False</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>值得注意的是对于<code>utcfromtimestamp()</code>来说，它返回的时间是理想(naive)时间而不是真实(aware)时间</p>
+<h2>datetime &lt;-&gt; date_string</h2>
+<p><code>python3.7</code>新增了对于形如<code>YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]</code>这样标准日期字符串的支持，两者可通过<code>fromisoformat(date_string)</code>, <code>isoformat()</code>自由转换，注意，<code>date</code>, <code>time</code>, <code>datetime</code>类均支持两者转换。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="s1">&#39;2019-01-02 12:30:59.000000&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime:&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime isoformat:&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">datetime:            datetime.datetime(2019, 1, 2, 12, 30, 59)</span>
+<span class="sd">datetime isoformat:  2019-01-02T12:30:59</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>除此以外，<code>date</code>, <code>time</code>, <code>datetime</code>类还支持使用<code>strftime()</code>方法改变输出<code>date_string</code>的格式，而<code>strftime()</code>等同于<code>__format__()</code>方法并推荐使用前者，除此以外，<code>ctime()</code>可以输出符合C标准的字符串。<code>datetime.strptime(date_string, format)</code>同理，但只支持<code>datetime</code>类，有关于自定义输出格式，请见<a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior">strftime() and strptime() Behavior</a></p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime string:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="n">date_str</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y.%m.</span><span class="si">%d</span><span class="s2"> %H:%M:%S %z&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;string format changed:&#39;</span><span class="p">,</span> <span class="n">date_str</span><span class="p">))</span>
+<span class="n">ctime_str</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">ctime</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ctime format string:&#39;</span><span class="p">,</span> <span class="n">ctime_str</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime string:      1970-01-01 00:00:00+00:00</span>
+<span class="sd">string format changed:    1970.01.01 00:00:00 +0000</span>
+<span class="sd">ctime format string:      Thu Jan  1 00:00:00 1970</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h2>datetime -&gt; timetuple</h2>
+<p>可以通过<code>timetuple()</code>来将<code>datatuple</code>转为<code>timetuple</code>，但没有提供反向转换的函数</p>
+<div class="highlight"><pre><span></span><span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc timetuple:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime:        datetime.datetime(1970, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">utc timetuple:       time.struct_time(tm_year=1970, tm_mon=1, tm_mday=1, tm_hour=0, tm_min=0, tm_sec=0, tm_wday=3, tm_yday=1, tm_isdst=-1)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h2>datetime &lt;-&gt; Gregorian ordinal</h2>
+<p>与时间戳(timestamp)不同，格里高利序数(Gregorian ordinal)即公历序数是以天来计算的，并且从<code>0001-01-01</code>开始。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt_1970</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromordinal</span><span class="p">(</span><span class="mi">719163</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:35} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ordinal 719163 to datetime:&#39;</span><span class="p">,</span> <span class="n">dt_1970</span><span class="p">))</span>
+<span class="n">ordinal</span> <span class="o">=</span> <span class="n">dt_1970</span><span class="o">.</span><span class="n">toordinal</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:35} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime 1970-01-01 to ordinal:&#39;</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">))</span>
+<span class="n">dt_0001</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromordinal</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>      <span class="c1">#  ordinal must be &gt;= 1</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:35} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;ordinal 1 to datetime:&#39;</span><span class="p">,</span> <span class="n">dt_0001</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">ordinal 719163 to datetime:         datetime.date(1970, 1, 1)</span>
+<span class="sd">datetime 1970-01-01 to ordinal:     719163</span>
+<span class="sd">ordinal 1 to datetime:              datetime.date(1, 1, 1)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h1>时间运算</h1>
+<p><code>datetime</code>, <code>date</code>, <code>time</code>类可以和各自对应的<code>timedelta</code>类加减，值得注意的是<code>aware</code>时间的<code>datetime</code>对象，只能和<code>aware</code>时间的<code>datetime</code>对象进行运算，<code>native</code>同理。</p>
+<div class="highlight"><pre><span></span><span class="n">dt_befre</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">dt_after</span> <span class="o">=</span> <span class="n">dt_befre</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:10} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime:&#39;</span><span class="p">,</span> <span class="n">dt_befre</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:10} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime:&#39;</span><span class="p">,</span> <span class="n">dt_after</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">datetime:  datetime.datetime(1970, 1, 2, 9, 30)</span>
+<span class="sd">datetime:  datetime.datetime(1970, 1, 2, 6, 30)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h1>获得当前时间</h1>
+<div class="highlight"><pre><span></span><span class="c1"># coding: utf-8</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">pytz</span>
+
+<span class="n">tz_cn</span>  <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+<span class="c1"># 等同于dt_today = datetime.fromtimestamp(time.time())</span>
+<span class="c1"># 等同于dt_today = datetime.datetime.now(tz=None)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;today datetime:&#39;</span><span class="p">,</span> <span class="n">dt_today</span><span class="p">))</span>
+<span class="n">dt_now_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn now datetime:&#39;</span><span class="p">,</span> <span class="n">dt_now_cn</span><span class="p">))</span>
+<span class="n">dt_now_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc now datetime:&#39;</span><span class="p">,</span> <span class="n">dt_now_utc</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">today datetime:      datetime.datetime(2019, 3, 7, 10, 11, 55, 359826)</span>
+<span class="sd">cn now datetime:     datetime.datetime(2019, 3, 7, 10, 11, 55, 359826, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">utc now datetime:    datetime.datetime(2019, 3, 7, 2, 11, 55, 359826)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>注意如果设置了<code>timezone</code>，<code>print()</code>时会在末尾打印
+可见如果没有设置<code>timezone</code>，表示的时间为理想时间，就如同这里的<code>dt_today</code>和<code>dt_now_utc</code>，而<code>dt_now_cn</code>则不同，假如同时刻我们有朋友在本初子午线附近，那么就可以通过<code>dt_now_cn</code>推算出其当地时间。</p>
+<h1>时区转换</h1>
+<p>要转换时区，可以使用<code>astimezone()</code>方法，同时<code>datetime</code>类还有一个容易误解的<code>replace()</code>方法，<code>datetime.astimezone(tz=None)</code>与<code>datetime.replace([year[, month[, day[, hour[, minute[, second[, microsecond[, tzinfo]]]]]]]])</code>的区别在于，前者会根据设置的<code>tzinfo</code>调整日期和时间，而后者只修改<code>tzinfo</code>属性。
+对于<code>astimezone()</code>，如果不带参数调用（或使用<code>tz = None</code>），则假定系统本地时区。转换后的<code>datetime</code>实例的<code>.tzinfo</code>属性将设置为时区实例，其中包含从OS获取的区域名称和偏移量。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="c1"># or：dt.replace(tzinfo=pytz.timezone(&#39;UTC&#39;))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime with tzinfo:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:25} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime without tzinfo:&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
+<span class="n">dt_utc_to_us</span> <span class="o">=</span> <span class="n">dt_utc</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz_us</span><span class="p">)</span>
+<span class="n">dt_to_us</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz_us</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:40} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime UTC to US/Eastern:&#39;</span><span class="p">,</span> <span class="n">dt_utc_to_us</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:40} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;datetime Asia/Shanghai to US/Eastern:&#39;</span><span class="p">,</span> <span class="n">dt_to_us</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">datetime with tzinfo:     datetime.datetime(1970, 1, 2, 9, 30, tzinfo=datetime.timezone.utc)</span>
+<span class="sd">datetime without tzinfo:  datetime.datetime(1970, 1, 2, 9, 30)</span>
+<span class="sd">datetime UTC to US/Eastern:              datetime.datetime(1970, 1, 2, 4, 30, tzinfo=&lt;DstTzInfo &#39;US/Eastern&#39; EST-1 day, 19:00:00 STD&gt;)</span>
+<span class="sd">datetime Asia/Shanghai to US/Eastern:    datetime.datetime(1970, 1, 1, 20, 30, tzinfo=&lt;DstTzInfo &#39;US/Eastern&#39; EST-1 day, 19:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>需要注意的是，在<code>python3.2</code>之前，<code>datetime</code>库是没有<code>timezone</code>类的，而<code>tzinfo</code>类只是抽象类，在使用前需要手工派生一个子类，这也是我们使用<code>pytz</code>库的原因，它提供了大多数地区的<code>tzinfo</code>方法和<code>pytz.timezone</code>类以及一些方法。
+我们当然可以使用<code>astimezone()</code>来转换时区，但是，对于许多时区，使用标准日期时间构造函数的<code>tzinfo</code>参数与<code>pytz</code>不兼容。对于没有夏令时转换的时区，它是安全的，例如<code>UTC</code>。（然而<code>Asia/Shanghai</code>不用夏令时，仍然却是日光节约时间(LMT)，反而<code>astimezone()</code>的结果是正确的）。</p>
+<p>问题出现于直接在<code>datetime.datetime()</code>类中进行赋值，某些地区可能会有偏差，比如<code>Asia/Shanghai</code>, <code>Europe/Amsterdam</code>等，会出现<code>LMT</code>时间，而同样的<code>tzinfo</code>用于<code>now()</code>, <code>fromtimestamp</code>则是正确时间，<code>Amsterdam</code>的确是实行夏令时的，所以返回日光节约时间(LMT)，但是<code>Shanghai</code>显然不应该为<code>LMT</code>时间，而应该是<code>China Standard Time(CST)</code></p>
+<div class="highlight"><pre><span></span><span class="n">tz_cn</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn timeinfo:&#39;</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn</span><span class="p">))</span>
+<span class="c1"># The following conditions are normal</span>
+<span class="n">dt_now_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz_cn</span><span class="p">)</span>
+<span class="n">dt_utc</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn now datetime:&#39;</span><span class="p">,</span> <span class="n">dt_now_cn</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn 1970 datetime:&#39;</span><span class="p">,</span> <span class="n">dt_utc</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;python</span>
+<span class="sd">cn timeinfo:    &lt;DstTzInfo &#39;Asia/Shanghai&#39; LMT+8:06:00 STD&gt;</span>
+<span class="sd">cn datetime:    datetime.datetime(1970, 1, 2, 9, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; LMT+8:06:00 STD&gt;)</span>
+<span class="sd">cn now datetime:datetime.datetime(2019, 3, 7, 15, 23, 15, 477210, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">utc datetime:   datetime.datetime(1970, 1, 1, 8, 0, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>为了解决这个问题，<code>pytz</code>库提供了<code>normalize()</code>和<code>localize()</code>这两个方法，前者用于<code>aware</code>时间，后者用于<code>naive</code>时间，感觉这两个方法有点像<code>datetime.timezone</code>类，不考虑同一时区不同偏移位置或因历史原因对民用时间进行的更改的情况</p>
+<div class="highlight"><pre><span></span><span class="n">tz_cn</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_cn_lmt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tz_cn</span><span class="p">)</span>
+<span class="n">dt_cn_cst</span> <span class="o">=</span> <span class="n">tz_cn</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">dt_cn_lmt</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn LMT datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn_lmt</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn CST datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn_cst</span><span class="p">))</span>
+
+<span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">dt_cn</span> <span class="o">=</span> <span class="n">tz_cn</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cn CST datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">cn LMT datetime:     datetime.datetime(1970, 1, 2, 9, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; LMT+8:06:00 STD&gt;)</span>
+<span class="sd">cn CST datetime:     datetime.datetime(1970, 1, 2, 9, 24, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">cn CST datetime:     datetime.datetime(1970, 1, 2, 9, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>所以处理时间的首选方式是始终以<code>UTC</code>工作，仅在输出供人类读取时转换成本地时间：</p>
+<div class="highlight"><pre><span></span><span class="n">tz_cn</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;Asia/Shanghai&#39;</span><span class="p">)</span>
+<span class="n">dt_cn</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz_cn</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:20} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;utc datetime:&#39;</span><span class="p">,</span> <span class="n">dt_cn</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">utc datetime:        datetime.datetime(1970, 1, 2, 17, 30, tzinfo=&lt;DstTzInfo &#39;Asia/Shanghai&#39; CST+8:00:00 STD&gt;)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>这种方法可以尽可能的减少<code>pytz</code>库的依赖，明白<code>pytz</code>本身起的作用是很关键的，因为现在也有一些其它的库比如<a href="https://pendulum.eustace.io/blog/a-faster-alternative-to-pyz.html">Pendulum - A faster (and better) alternative to pytz</a></p>
+<h1>reference</h1>
+<p>其余可以参考<code>datetime</code>的手册和一些其它资料，其中手册是一定要读的：
+<a href="https://docs.python.org/3/library/datetime.html">datetime — Basic date and time types</a>
+<a href="http://pytz.sourceforge.net/">pytz - World Timezone Definitions for Python</a></p>
+<p><a href="https://tech.glowing.com/cn/dealing-with-timezone-in-python/">Python中的时区处理</a>
+<a href="https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000/001431937554888869fb52b812243dda6103214cd61d0c2000">datetime - 廖雪峰的官方网站</a>
+<a href="https://www.programiz.com/python-programming/datetime">Python datetime</a>
+<a href="https://blog.liang2.tw/posts/2015/09/datetime-sqlite/">Datetime in SQLite and Python</a>
+<a href="http://www.dannysite.com/blog/122/">datetime时区转换</a>
+<a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c03/p16_manipulate_dates_involving_timezone.html">结合时区的日期操作 — python3-cookbook 3.0.0 文档</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/datetimezhi-nan/">posted at 22:51</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/datetime.html" class="tags">datetime</a>
+                    &nbsp;<a href="/tag/pytz.html" class="tags">pytz</a>
+                    &nbsp;<a href="/tag/time.html" class="tags">time</a>
+                </div>
+            </article>            <h4 class="date">1月 20, 2019</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/guan-yu-lei-de-yi-xie-wen-ti/" rel="bookmark" title="Permanent Link to &quot;关于类的一些问题&quot;">关于类的一些问题</a>
+                </h2>
+
+                
+                
+
+                <h3>关于类的一些问题：实例/类/静态方法和作用域</h3>
+<p>在写完<a href="./可变对象和不可变对象的一些问题.md">可变对象和不可变对象的一些问题</a>后，我想以往一样实例化多个实例时，突然想到如果我在某个实例中使用诸如<code>var.fun()</code>的语法修改了一个可变<code>var</code>，会产生什么后果？如果这个变量是类变量或者是实例变量呢？
+为了解决这个问题，所以写下了这篇文章，在解决上面的问题之前，首先我们需要了解对于变量，或者说属性，通过类名来访问它们和通过实例名来访问是不同的，前者是直接到类的命名空间寻找，而后者先在当前实例的命名空间寻找，如果没有找到，则在当前实例所绑定的类的命名空间中寻找。访问看上去没有问题，问题是使用<code>实例名.变量名</code>来对一个类变量进行赋值或是修改的时候，如果在实例的命名空间中没有同名的实例变量，那么，就不会像之前那样去类的命名空间中查找，而是新建一个实例变量，虽然这看起来让人难以置信，但是仔细想想，这个过程本身就是动态绑定，否则又置动态绑定于何处呢？而这个动态绑定从代码上来说和魔术方法<code>__getattr__()</code>,<code>__setattr__()</code>有关。</p>
+<p>不多说了，直接看代码</p>
+<div class="highlight"><pre><span></span><span class="c1"># coding: utf-8</span>
+<span class="kn">import</span> <span class="nn">dis</span>
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span> 
+    <span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span>     <span class="c1"># class_var_1，这也是类变量</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_var</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance_var</span> <span class="o">=</span> <span class="n">instance_var</span>
+
+    <span class="k">def</span> <span class="nf">instance_func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;定义实例方法，至少有一个self参数 &quot;&quot;&quot;</span>
+        <span class="n">local_var</span> <span class="o">=</span> <span class="bp">None</span>    <span class="c1"># 虽然在实例方法内，但这是局部变量</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;instance_list&#39;</span><span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;instance_func_run&#39;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">class_func</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 定义类方法，至少有一个cls参数 &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;class_func&#39;</span>    <span class="c1"># class_var_2</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">class_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;class_list&#39;</span><span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;class_func_run&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">static_func</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot; 定义静态方法 ，无默认参数&quot;&quot;&quot;</span>
+        <span class="c1"># 局部变量，虽然static_func()是公用的，但执行完毕后就被回收，无法从外部访问</span>
+        <span class="c1"># 除非输入类变量或是实例变量</span>
+        <span class="n">static_list</span> <span class="o">=</span> <span class="s1">&#39;static_func&#39;</span>
+        <span class="k">print</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;static_func_run&#39;</span><span class="p">)</span>
+
+<span class="n">foo1</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="s2">&quot;instance_var1&quot;</span><span class="p">)</span>
+<span class="n">foo2</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="s2">&quot;instance_var2&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">foo1</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">instance_func</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">instance_func</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_func</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_func</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">static_func</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">static_func</span><span class="p">)</span>
+
+<span class="c1"># dis.dis(Foo.class_func)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="c1"># `class_var`应该尽量通过`类名.变量名`访问和修改，而不是`实例名.变量名`</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- class_var -----&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>       <span class="c1"># 实例`foo1`的命名空间中没有名为`class_var`的实例变量，所以向上查找类的命名空间中的`class_var`</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;world&#39;</span>    <span class="c1"># 通过`实例名.变量名`访问一旦出现赋值操作，若无对应的实例变量，则会在相应实例中创建实例变量</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>        <span class="c1"># 不会更改类中的变量</span>
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;Hello world&#39;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>       <span class="c1"># 访问之前创建的实例变量`class_var`而不是类变量`class_var`</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="c1"># `class_func()`的访问同理</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- class_func -----&quot;</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">class_func</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">class_func</span><span class="p">()</span>        <span class="c1"># 效果等同于`foo1.class_func()`，因为调用的是同一函数</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="c1"># 对于可变变量使用`实例名.变量名`的访问可能是灾难性的</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- class_list -----&quot;</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">class_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>     <span class="c1"># 这一步等同于`Foo.class_func()`，因为调用的是同一函数</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_list</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_list</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_list</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- instance_list -----&quot;</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">instance_func</span><span class="p">()</span>
+<span class="n">foo2</span><span class="o">.</span><span class="n">instance_func</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">instance_list</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">instance_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">instance_list</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">instance_list</span><span class="p">)</span>       <span class="c1"># 实例变量显然不受此影响</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">[&#39;__class__&#39;, &#39;__delattr__&#39;, &#39;__dict__&#39;, &#39;__doc__&#39;, &#39;__format__&#39;, &#39;__getattribute__&#39;, &#39;__hash__&#39;, &#39;__init__&#39;, &#39;__module__&#39;, &#39;__new__&#39;, &#39;__reduce__&#39;, &#39;__reduce_ex__&#39;, &#39;__repr__&#39;, &#39;__setattr__&#39;, &#39;__sizeof__&#39;, &#39;__str__&#39;, &#39;__subclasshook__&#39;, &#39;__weakref__&#39;, &#39;class_func&#39;, &#39;class_var&#39;, &#39;instance_func&#39;, &#39;instance_var&#39;, &#39;static_func&#39;]</span>
+<span class="sd">&lt;bound method Foo.instance_func of &lt;__main__.Foo object at 0x0000000001857E10&gt;&gt;</span>
+<span class="sd">&lt;bound method Foo.instance_func of &lt;__main__.Foo object at 0x00000000018642E8&gt;&gt;</span>
+<span class="sd">&lt;bound method type.class_func of &lt;class &#39;__main__.Foo&#39;&gt;&gt;</span>
+<span class="sd">&lt;bound method type.class_func of &lt;class &#39;__main__.Foo&#39;&gt;&gt;</span>
+<span class="sd">&lt;function static_func at 0x0000000001863668&gt;</span>
+<span class="sd">&lt;function static_func at 0x0000000001863668&gt;</span>
+<span class="sd">Hello</span>
+<span class="sd">Hello</span>
+<span class="sd">Hello</span>
+<span class="sd">----- class_var -----</span>
+<span class="sd">Hello</span>
+<span class="sd">world</span>
+<span class="sd">Hello</span>
+<span class="sd">Hello</span>
+<span class="sd">world</span>
+<span class="sd">Hello world</span>
+<span class="sd">Hello world</span>
+<span class="sd">----- class_func -----</span>
+<span class="sd">class_func_run</span>
+<span class="sd">world</span>
+<span class="sd">class_func_run</span>
+<span class="sd">class_func</span>
+<span class="sd">----- class_list -----</span>
+<span class="sd">[&#39;class_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">[&#39;class_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">[&#39;class_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">----- instance_list -----</span>
+<span class="sd">instance_func_run</span>
+<span class="sd">instance_func_run</span>
+<span class="sd">[&#39;instance_list&#39;]</span>
+<span class="sd">[&#39;instance_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">[&#39;instance_list&#39;]</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>请结合结果关注注释部分，如果想加深了解，可以自己试试访问变量或函数，也可尝试下面步骤：</p>
+<ol>
+<li>你可以反注释代码中的注释部分，观察结果，并试着删除<code>cls.class_var</code>前的<code>cls</code>，看看有什么不同，这里涉及到变量作用域的问题</li>
+<li>试着删除<code>class Foo(object)</code>中的<code>(object)</code>，观察结果，这里涉及到新式类和旧式类</li>
+</ol>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/guan-yu-lei-de-yi-xie-wen-ti/">posted at 16:08</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">12月 17, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/iterators-and-generators/" rel="bookmark" title="Permanent Link to &quot;Iterators and Generators&quot;">Iterators and Generators</a>
+                </h2>
+
+                
+                
+
+                <h3>Iterators and Generators</h3>
+<h4>迭代、可迭代、迭代器</h4>
+<p>简而言之，迭代（itertion）是一种操作；可迭代（iterable）是对象的一种特性。迭代器（iterator）是一种对象。
+我们最常见的迭代操作如下：</p>
+<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">seasonList</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">season</span><span class="p">)</span>
+</pre></div>
+
+
+<p>这里的<code>seasonList</code>对象本身就是一个可迭代对象，Python处理<code>for</code>循环时，首先会调用内建函数<code>iter(seasonList)</code>，实际上会调用<code>seasonList.__iter__()</code>，返回一个迭代器。而后，<code>for</code>循环会调用内建函数<code>next()</code>，作用在该迭代器上，获取迭代器的下一个元素，并赋值给<code>season</code>。此后，Python才开始执行循环体。</p>
+<p>凡是可以用作for循环的都是可迭代对象,而Python中的顺序类型，都是可迭代的（<code>list</code>、<code>tuple</code>、<code>string</code>），其余包括<code>dict</code>、<code>set</code>、<code>file</code>也是可迭代的。对于用户自己实现的类型，如果提供了<code>__iter__()</code>或者<code>__getitem__()</code>方法，那么该类的对象也是可迭代的。可以通过isinstance(obj, Iterable) （需要事先from collections import Iterable）来判断对象是否可迭代对象.</p>
+<p>从内部细节来说，比起可迭代对象，迭代器除了需要实现返回自己本身的<code>__iter__()</code>或者<code>__getitem__()</code>方法，还需要实现<code>next()</code>方法用来调用下一个元素（在python3.x中为<code>__next()__</code>方法）。可以通过<code>isinstance(obj, collections.Iterator)</code>来判断对象是否是迭代器.</p>
+<h4>迭代器</h4>
+<p>迭代器示例如下，我们传入一个值和次数，每次调用<code>__next()__</code>时，都会输出该值，直到计数值大于传入次数，抛出一个<code>StopIteration</code>，表明该迭代器已耗尽，告诉<code>for...in...</code>终止循环。除此以外，也可以传入一个列表，其<code>max_repeats</code>也可由列表长度求出，不过从减小内存占用上来说，传入一个列表然后在<code>__next()__</code>中遍历它是毫无意义的，因为传入的列表本身就已经占用了内存，不过可以当作练习尝试写一下。</p>
+<div class="highlight"><pre><span></span><span class="ch">#! /usr/bin/env python3</span>
+<span class="k">class</span> <span class="nc">BoundedRepeater</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">max_repeats</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_repeats</span> <span class="o">=</span> <span class="n">max_repeats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_repeats</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+<span class="n">repeater</span> <span class="o">=</span> <span class="n">BoundedRepeater</span><span class="p">(</span><span class="s1">&#39;Hello&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">repeater</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</pre></div>
+
+
+<blockquote>
+<p>outout:
+Hello
+Hello
+Hello</p>
+</blockquote>
+<h4>分开定义的可迭代对象和迭代器</h4>
+<p>分开定义的好处在于, 每次对可迭代对象使用iter()函数时,都返回一个新的迭代器对象, 这样看起来我们可以重复使用<code>repeater</code>，但是对于迭代器来说，当它抛出<code>StopIteration</code>耗尽以后是不能再次使用的，即每个迭代器都只能使用一次。</p>
+<div class="highlight"><pre><span></span><span class="ch">#! /usr/bin/env python3</span>
+<span class="k">class</span> <span class="nc">Repeater</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">max_repeats</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_repeats</span> <span class="o">=</span> <span class="n">max_repeats</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">RepeaterIterator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">RepeaterIterator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">max_repeats</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">value</span>
+
+<span class="n">repeater</span> <span class="o">=</span> <span class="n">Repeater</span><span class="p">(</span><span class="s1">&#39;Hello&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">repeater</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<span class="c1"># You can use &quot;repeater&quot; again</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">repeater</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</pre></div>
+
+
+<h4>python2.x 3.x 兼容的迭代器</h4>
+<p>之前也说了由于python2.x与python3.x的不同，python3.x中将<code>next()</code>改为了<code>__next()__</code>，故兼容方法如下：</p>
+<div class="highlight"><pre><span></span><span class="ch">#! /usr/bin/env python3</span>
+<span class="k">class</span> <span class="nc">InfiniteRepeater</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="c1"># Python 2 compatibility:</span>
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__next__</span><span class="p">()</span>
+</pre></div>
+
+
+<h4>生成器</h4>
+<p>生成器其实是一种简单而优雅的创造迭代器的工具，它们像常规函数一样编写，但是使用<code>yield</code>来返回数据而不是<code>return</code>，每次<code>next()</code>被调用时，生成器会从上次停止的地方恢复（它会记住上次执行语句的所有数据）。值得注意的是，比如<code>gen = fib(10)</code>这条语句返回的只是个生成器，而不是列表、元组或是别的什么，生成器只有在被检索时候，才会被赋值（占用内存），该特性称之为惰性计算。关于<code>a, b = b, a + b</code>的结构，请参见<a href="https://dbader.org/blog/python-nested-unpacking">Unpacking Nested Data Structures in Python</a></p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fib</span><span class="p">(</span><span class="nb">max</span><span class="p">):</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">b</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="n">fib</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fibList</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">gen</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">fibList</span><span class="p">)</span>   <span class="c1"># [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]</span>
+</pre></div>
+
+
+<h5>生成器的方法</h5>
+<p>与迭代器不同的是，生成器有一些方法如<code>send()</code>，调用这些方法可以控制对应的生成器函数，但若是生成器函数已在执行过程中，调用这些方法则会抛出<code>ValueError</code>异常。</p>
+<ul>
+<li>generator.next()：从上一次在<code>yield</code>表达式暂停的状态恢复，继续执行到下一次遇见<code>yield</code>表达式。当该方法被调用时，当前<code>yield</code>表达式的值为<code>None</code>，若该生成器还没有执行过<code>next()</code>或<code>send(None)</code>，则返回第一个<code>yield</code>后的表达式的值（消息传递），否则返回下一个<code>yield</code>后表达式的值。若没有遇到<code>yield</code>表达式，生成器函数就已经退出，那么该方法会抛出<code>StopIterator</code>异常。</li>
+<li>generator.send(value)：和<code>generator.next()</code>类似，差别在与它会将当前<code>yield</code>表达式的值设置为<code>value</code>（调度操作），其实<code>generator.next()</code>的实现，就是<code>send(None)</code>。</li>
+<li>generator.throw(type[, value[, traceback]])：向生成器函数抛出一个类型为<code>type</code>，值为<code>value</code>，调用栈为<code>traceback</code>的异常，而后让生成器函数继续执行到下一个<code>yield</code>表达式。其余行为与<code>generator.next()</code>类似。</li>
+<li>generator.close()：告诉生成器函数，当前生成器作废不再使用。</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;Received value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>     <span class="c1"># print 0</span>
+<span class="k">print</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;Hello&#39;</span><span class="p">))</span>  <span class="c1"># Received value: Hello, then print 1</span>
+<span class="k">print</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;world&#39;</span><span class="p">))</span>  <span class="c1"># Received value: world, then print 2</span>
+<span class="k">print</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>     <span class="c1"># print 4</span>
+</pre></div>
+
+
+<p>此处使用<code>send()</code>方法与生成器函数通信，生成器函数<code>func</code>通过<code>yield</code>表达式，将处理好的<code>x</code>发送给生成器的调用者；与此同时，生成器的调用者通过<code>send</code>函数，将外部信息作为生成器函数内部的<code>yield</code>表达式的值，保存在<code>value</code>当中，并参与后续的处理。两者区别是，<strong>前一种是消息传递，而后一种则是一种调度操作</strong>，关于这一点，详见协程与生成器</p>
+<p>所以过程就是，首先生成一个生成器<code>gen</code>，此时，变量如<code>x</code>, <code>value</code>都还没被赋值，然后需要使用<code>next()</code>或是<code>send(None)</code>来启动生成器，将<code>x</code>赋值成<code>0</code>，并且<code>yield x</code>将<code>x</code>的值返回给调用者，值得注意的是，此时<code>value</code>并没有被赋值，<code>value = yield x</code>这条语句只执行了后半部分，然后上下文环境被保留。之后执行<code>print(gen.send('Hello'))</code>时，再从刚刚被“暂停”的地方开始执行，将<code>Hello</code>赋给<code>value</code>，之后依次执行，直到遇到下一次<code>yield</code>关键词再次“暂停”返回，此时<code>x</code>的值为<code>1</code>，所以<code>1</code>被打印出来。之后的语句同理。</p>
+<h5>生成器和迭代器的区别</h5>
+<p>对于迭代器来说，每次执行<code>next()</code>方法并返回后，该方法的上下文环境即消失了，也就是所有在<code>next()</code>方法中定义的局部变量就无法被访问了。而对于生成器，每次执行<code>next()</code>方法后，代码会执行到<code>yield</code>关键字处，并将<code>yield</code>后的参数值返回，同时当前生成器函数的上下文会被保留下来。也就是函数内所有变量的状态会被保留，同时函数代码执行到的位置会被保留，感觉就像函数被暂停了一样。当再一次调用<code>next()</code>方法时，代码会从<code>yield</code>关键字开始执行（准确的说是执行语句的左半部份）。如果执行<code>next()</code>时没有遇到<code>yield</code>关键字即退出（或返回），则抛出<code>StopIteration</code>异常。</p>
+<h5>生成器表达式</h5>
+<p>除了使用<code>yield</code>关键词来编写生成器，对于一些简单的生成器我们可以使用类似于列表解析（列表生成式）的语法来编写，不过需要把<code>[]</code>替换成<code>()</code>，就内存占用来说，生成器表达式倾向于比列表表达式拥有更好的内存利用率。</p>
+<div class="highlight"><pre><span></span><span class="n">number</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>   <span class="c1"># &lt;generator object &lt;genexpr&gt; at 0x00000000038EF318&gt;</span>
+<span class="nb">list</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>    <span class="c1"># At this point, the value is only calculated</span>
+</pre></div>
+
+
+<h4>总结</h4>
+<p>迭代、可迭代对象、迭代器、生成器的关系见下图：</p>
+<p><img alt="迭代器和生成器的关系" src="./images/Iterators%20and%20Generators%20Relationships.png"></p>
+<p>生成器的一些应用请参阅：<a href="https://liam0205.me/2017/06/30/generator-coroutine-in-python-basic-topics/">Python 中的黑暗角落（二）：生成器协程的调度问题</a></p>
+<h4>Reference</h4>
+<p><a href="https://docs.python.org/3/tutorial/classes.html#iterators">Official Class Reference</a>
+<a href="https://liam0205.me/2017/06/30/understanding-yield-in-python/">Python 中的黑暗角落（一）：理解 yield 关键字</a>
+<a href="https://dbader.org/blog/python-iterators">Python Iterators: A Step-By-Step Introduction</a>
+<a href="http://gohom.win/2015/09/07/PyIterator/">Python迭代器和生成器</a>
+<a href="https://nvie.com/posts/iterators-vs-generators/">Iterables vs. Iterators vs. Generators</a>
+<a href="http://www.bjhee.com/python-yield.html">谈谈Python的生成器</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/iterators-and-generators/">posted at 22:52</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/iterator.html" class="tags">iterator</a>
+                    &nbsp;<a href="/tag/generator.html" class="tags">generator</a>
+                </div>
+            </article>            <h4 class="date">11月 16, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/ke-bian-dui-xiang-he-bu-ke-bian-dui-xiang-de-yi-xie-wen-ti/" rel="bookmark" title="Permanent Link to &quot;可变对象和不可变对象的一些问题&quot;">可变对象和不可变对象的一些问题</a>
+                </h2>
+
+                
+                
+
+                <h4>前言</h4>
+<p>如同名字一样，可变对象是指创建后其值可以被改变的对象（<code>list</code>, <code>dict</code>, <code>set</code>, etc.），而不可变对象则是指创建后值不可改变的对象（<code>number</code>, <code>string</code>, <code>tuple</code>, etc.）。
+这里说明了一些通常容易造成困惑的问题，并说明了可变/不可变对象区别的深入的原因是<code>python</code>是如何<code>parse</code>代码的，或者说字节码是如何执行的。</p>
+<h4>对象和id</h4>
+<p>在这之前，我们首先要了解什么是对象，请看下面代码：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+</pre></div>
+
+
+<p>那么问题是打印出来的<code>id</code>是谁的<code>id</code>？答案是整数<code>1</code>的<code>id</code>，而不是变量<code>a</code>的<code>id</code>，请记住这一点，为了防止被带偏，这是非常重要的。
+变量<code>a</code>和其它变量一样，都只是一个名字，类似于标识符一样的东西，<code>a = 1</code>是指：通过<code>=</code>号，将对象<code>1</code>绑定到了变量<code>a</code>上，仅此而已。在C语言中，<code>1</code>就仅仅是一个数字，但在<code>python</code>中，数字<code>1</code>是一个不可变对象，它甚至有自己的属性，这也是为什么从语法糖来说，<code>python</code>没有<code>++</code>这样的语法的原因。（当然，要支持<code>++</code>也是可以的，首先<code>int</code>类需要有个诸如<code>__selfadd__</code>的魔术方法，就像实现<code>+=</code>语法的<code>__iadd__</code>方法一样，之后编译时要支持<code>++</code>的语法，可以调用到该魔术方法，但是，从设计角度来说，<code>int</code>类从一开始就被设计成不可变对象，这也是<code>python</code>使用<code>for...in...</code>的语法而不是<code>for</code>的原因）</p>
+<h4>可变对象和不可变对象的定义</h4>
+<p>对于可变对象和不可变对象定义有个误解是把变量指向对象的<code>id</code>改变作为判断标准，认为只要<code>id</code>改变就是不可变对象，反之为可变对象，并且举出类似错误例子：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>    <span class="c1"># id(1)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>    <span class="c1"># id(2)</span>
+<span class="il">18441632L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+</pre></div>
+
+
+<p>现在你应该可以看出这个例子的疏漏之处，变量<code>a</code>前后指向不同的对象，<code>id</code>当然会改变，对于变量<code>a</code>，变量<code>b</code>对应的操作应该是这样：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>    <span class="c1"># id([1])</span>
+<span class="il">44322632L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>    <span class="c1"># id([1, 2])</span>
+</pre></div>
+
+
+<p>可以看到<code>id</code>同样会改变，仔细观察<code>b</code>重新赋值的<code>id</code>，其值等于之前错例中的<code>id</code>，说明是同一对象。</p>
+<p>通过上面例子我们可以看到不同操作带来的影响，通过赋值来改变对象和通过对象的方法来改变对象是不同的，明白这一点是很重要的。</p>
+<h4>绑定</h4>
+<p>对于赋值来说，其实所有赋值都是引用（虽然<code>python</code>中似乎没有这种说法），比如<code>a = b</code>或者<code>a = 1</code>，与是否为可变或不可变对象无关，参数传递也是如此。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="c1"># The [1] is not the above [1]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44322632L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">18441656L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44419368L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44419368L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>       <span class="c1"># The 1 is the above 1, because of the integer pool</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">18441656L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">5000</span>    <span class="c1"># The 5000 is not the above 5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44419392L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44419368L</span>
+</pre></div>
+
+
+<p>共有六组对比，第一二组，第三五组，第四六组说明了<code>=</code>右侧参数对于赋值的影响</p>
+<p>值得一提的是：后两组数据主要说明了<code>python</code>中整数池的影响，其范围为[-5，257)。</p>
+<p>对于第六组，有一个有趣的现象，只有在<code>command line</code>下运行才会出现该情况，如果是在文件或<code>command line</code>函数中定义，则<code>a</code>, <code>b</code>所指向的是同一个对象</p>
+<p>总之，如果不考虑整数池的影响，可变对象和不可变对象在赋值的时候（位于<code>=</code>号右侧）是没有差别的，只要<code>=</code>右侧参数同为对象或同为标识符，当然，在被赋值的时候，我们自然不能改变不可变对象其中的值，就像<code>(1, 2)</code>，甚至我们不能改变它的长度，但对于像<code>([1, 2], 3)</code>这样的不可变对象，我们当然可以改变其<code>[0]</code>项，因为<code>[1, 2]</code>本来就可变对象，就像<code>我的附庸的附庸，不是我的附庸</code>一样，外面<code>tuple</code>的不可变特性不能影响到里面<code>list</code>的可变性。</p>
+<h4>可变/不可变对象执行过程深入分析</h4>
+<p>从字节码角度说明了可变/不可变对象的区别，关于下面的内容你可能需要对<code>python</code>反汇编过程，字节码，和<code>dis</code>库有一定了解。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+  <span class="mi">3</span>           <span class="mi">6</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+             <span class="mi">12</span> <span class="n">BINARY_ADD</span>
+             <span class="mi">13</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+             <span class="mi">16</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+             <span class="mi">19</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">`co_consts`是一个包含了函数体内的任意实数的元组，`co_consts[0]`固定为函数返回值，因为当前无返回值，所以为`None`，执行过程是`LOAD_CONST`将`co_consts[1]`即`5000`推入堆栈顶部；之后`STORE_FAST`将堆栈顶部(TOS)储存到`co_varnames[0]`即变量a，这一步就是将`1`绑定到变量`a`，`co_varnames`是一个包含了函数体内使用的任意本地变量名字的元组；`LOAD_FAST`将`co_varnames[0]`即变量a的引用推入堆栈顶部；`LOAD_CONST`将`co_consts[2]`即`1`推入堆栈顶部，`BINARY_ADD`执行`TOS = TOS1 + TOS`，实现相加；`STORE_FAST`再次将堆栈顶部(TOS)绑定到`co_varnames[0]`即变量a；最后`LOAD_CONST`, `RETURN_VALUE`将返回值推入堆栈顶部，并将TOS返回给函数的调用者。</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+              <span class="mi">3</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">与下面列表的初始化对比，不可变对象是一次`LOAD_CONST`全部内容，注意此时的`foo.__code__.co_consts`值和`LOAD_CONST`调用的参数</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">...</span>     <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="o">...</span>     <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">BUILD_LIST</span>               <span class="mi">2</span>
+              <span class="mi">9</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+  <span class="mi">3</span>          <span class="mi">12</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+             <span class="mi">15</span> <span class="n">LOAD_ATTR</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">append</span><span class="p">)</span>
+             <span class="mi">18</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+             <span class="mi">21</span> <span class="n">CALL_FUNCTION</span>            <span class="mi">1</span>
+             <span class="mi">24</span> <span class="n">POP_TOP</span>
+
+  <span class="mi">4</span>          <span class="mi">25</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+             <span class="mi">28</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+             <span class="mi">31</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+             <span class="mi">34</span> <span class="n">STORE_SUBSCR</span>
+             <span class="mi">35</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+             <span class="mi">38</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">(</span><span class="s1">&#39;append&#39;</span><span class="p">,)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">`co_names`是一个包含了函数体内引用的任意非本地名字的元组，比如这里使用的`append()`函数。</span>
+<span class="sd">从第三行开始：`LOAD_FAST`将`co_varnames[0]`即变量b的引用推入堆栈顶部，`LOAD_ATTR`将会使用`getattr(TOS, co_names[namei])`替换TOS，这里相当于`getattr(b, &#39;append&#39;)`，即获得列表`[1, 2]`的`append()`方法；之后`LOAD_CONST`将`co_consts[3]`即`3`推入堆栈顶部，之后`CALL_FUNCTION(1)`代表函数有一个位置参数，此时堆栈顶部包含位置参数，最右侧的参数在最顶部，参数下面是可调用对象，即`append()`，之后会弹出（pop）所有参数和可调用对象，使用这些参数调用可调用对象，并将返回值推入堆栈顶端；`POP_TOP`移除堆栈顶端的值，变量`b`所绑定对象的值在上一步就已经更改了。</span>
+<span class="sd">从第四行开始：`LOAD_CONST`将`co_consts[4]`即`4`推入堆栈顶部；`LOAD_FAST`将`co_varnames[0]`即变量b的引用推入堆栈顶部；`LOAD_CONST`将`co_consts[2]`即`2`推入堆栈顶部；`STORE_SUBSCR`执行`TOS1[TOS] = TOS2`即`[1, 2, 3][2] = 4`；最后`LOAD_CONST`, `RETURN_VALUE`将返回值推入堆栈顶部，并将TOS返回给函数的调用者。</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/ke-bian-dui-xiang-he-bu-ke-bian-dui-xiang-de-yi-xie-wen-ti/">posted at 22:06</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">11月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/and-or-not/" rel="bookmark" title="Permanent Link to &quot;and or not&quot;">and or not</a>
+                </h2>
+
+                
+                
+
+                <h2>and or not</h2>
+<h3>何为真？何为假？</h3>
+<p>首先，要明确的是虽然布尔值只有<code>True</code>和<code>False</code>两种，但是在计算（<code>if</code>，<code>while</code>或表达式）中，以下的值会被认为是<code>False</code>值：</p>
+<ul>
+<li><code>None</code></li>
+<li><code>False</code></li>
+<li>任何数字类型的零值，如：<code>0</code>, <code>0L</code>, <code>0.0</code>, <code>0j</code></li>
+<li>任何长度为<code>0</code>的对象：<ul>
+<li>任何空序列，如：<code>''</code>, <code>()</code>, <code>[]</code></li>
+<li>任何空映射，如：<code>{}</code></li>
+<li>用户定义的类的实例，如果该类定义<code>__nonzero__()</code>或<code>__len __()</code>方法，则当该方法返回整数<code>0</code>或bool值<code>False</code></li>
+</ul>
+</li>
+</ul>
+<p>所有其他值都被认为是<code>True</code></p>
+<p>除非另有说明，具有布尔结果的操作和内置函数总是返回0或False表示false，1或True表示true。 （重要的例外：布尔运算或者并且始终返回其中一个操作数。）</p>
+<h3>短路</h3>
+<p>在大多数语言中，<code>and</code>和<code>or</code>都具有短路效应，比如对于<code>A and B</code>来说，如果判定<code>A</code>为<code>False</code>，那整个表达式一定为<code>False</code>，故不必计算后面的值（除非后面有布尔运算符<code>or</code>），表达式等同于执行<code>A if not A else B</code>；<code>or</code>运算符同理。</p>
+<p>值得注意的是，<code>and</code>和<code>or</code>返回的是操作数而不是布尔值，而<code>not</code>则返回布尔值。</p>
+<div class="highlight"><pre><span></span><span class="c1"># and, or </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span>
+<span class="mi">2</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">2</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="mi">1</span>
+<span class="s1">&#39;&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="bp">None</span> <span class="ow">or</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">3</span>
+<span class="mi">3</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">2</span>
+<span class="mi">1</span>
+<span class="c1"># not</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">0</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<h3>优先级</h3>
+<p>先声明一点，<code>and</code>, <code>or</code>, <code>not</code>三者之间是没有任何优先级关系的。
+有些人认为优先级<code>not &gt; and &gt; or</code>，这纯粹是无稽之谈，<a href="https://docs.python.org/3.7/library/stdtypes.html#boolean-operations-and-or-not">官方文档</a>中的确提到：</p>
+<blockquote>
+<p>"These are the Boolean operations, ordered by ascending priority"</p>
+</blockquote>
+<p>但仔细阅读一下你会这里的排序是指<code>Notes</code>的排序而不是优先级，<strong>三者的计算顺序单纯的是从左往右并按照短路的原则进行计算</strong>。</p>
+<h4><code>not</code>具有更高优先级吗？</h4>
+<p><code>and</code>, <code>or</code>姑且不论，当把<code>not</code>和它们放在一起时，似乎<code>not</code>具有更高的优先级，这的确会使人迷惑，比如<code>0 or not 1</code>中是先计算<code>not 1</code>结果为<code>False</code>，之后再计算<code>0 or False</code>，结果等于<code>False</code>。这种论调推导出来的结论的确是对的，关于这一点我们谁也说服不了谁，所以让我们深入一点，借助<code>dis</code>模块来看看代码到底是怎么执行的：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">dis</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">10</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">UNARY_NOT</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">10</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p>这里为了演示方便，使用<code>lambda</code>表达式构建了一个返回<code>0 or not 1</code>表达式值的函数，使用普通函数可以达到同样效果。
+关于<code>dis</code>输出格式解释如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">源代码中的行号</th>
+<th align="center">字节码指令中的偏移量</th>
+<th align="center">字节码指令名称</th>
+<th align="center">指令的参数</th>
+<th align="center">实际参数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">2</td>
+<td align="center">0</td>
+<td align="center">LOAD_CONST</td>
+<td align="center">1</td>
+<td align="center">(0)</td>
+</tr>
+</tbody>
+</table>
+<p><code>LOAD_CONST</code>指令将整数<code>0</code>压入堆栈(stack)，之后执行<code>JUMP_IF_TRUE_OR_POP</code>命令，判断<code>0</code>，即栈顶（TOS:top-of-stack）是否为真，如果TOS为真，将字节码计数器设置为<code>10</code>，即跳转到字节码中偏移量为<code>10</code>的地方，并在堆栈上留下TOS；否则（TOS为假），弹出(pop)TOS。到这一步明显看出计算过程中先执行了<code>or</code>运算符，当<code>or</code>运算符左侧为真时，跳转执行<code>RETURN_VALUE</code>将TOS传给函数调用者；当<code>or</code>运算符左侧为假时，才将整数<code>1</code>压入堆栈(stack)，并执行<code>UNARY_NOT</code>运算，最后执行<code>RETURN_VALUE</code>返回<code>False</code>。可见<code>not</code>并没有比<code>and</code>和<code>or</code>更高的优先级。</p>
+<h4><code>and</code>, <code>or</code>也具有相同优先级</h4>
+<p>至于<code>and</code>和<code>or</code>的优先级：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">5</span> <span class="ow">and</span> <span class="mi">4</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">5</span> <span class="ow">and</span> <span class="mi">4</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_FALSE_OR_POP</span>    <span class="mi">15</span>
+             <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">5</span> <span class="ow">or</span> <span class="mi">4</span>
+<span class="mi">5</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">5</span> <span class="ow">or</span> <span class="mi">4</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">POP_JUMP_IF_FALSE</span>       <span class="mi">12</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p><code>POP_JUMP_IF_FALSE</code>命令的作用为：如果TOS为假，将字节码计数器设置为参数值并弹出TOS。也就是说，形如<code>A and B or C</code>这种格式如果<code>A</code>判断为<code>False</code>，那么整个式子的值就为<code>C</code></p>
+<h4><code>not</code>与<code>==</code>的优先级</h4>
+<p>那么<code>not</code>与<code>==</code>的优先级谁高谁低呢？</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">==</span> <span class="bp">True</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_GLOBAL</span>              <span class="mi">0</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">COMPARE_OP</span>               <span class="mi">2</span> <span class="p">(</span><span class="o">==</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">UNARY_NOT</span>
+             <span class="mi">10</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p><code>not 2 == True</code>的结果为<code>True</code>说明了<code>==</code>的优先级大于<code>not</code>，<code>1 == True</code>为真，但<code>2 == True</code>为假，最后执行<code>not False</code>结果为真，之后的反编译证明了这一点。</p>
+<h4><code>in</code>, <code>not in</code>与<code>and</code>, <code>or</code>, <code>not</code>的优先级</h4>
+<p>当逻辑运算表达式中加入成员运算符<code>in</code>, <code>not in</code>时，计算顺序会变成什么样呢？</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+  <span class="mi">1</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+             <span class="mi">12</span> <span class="n">COMPARE_OP</span>               <span class="mi">6</span> <span class="p">(</span><span class="ow">in</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="mi">1</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+              <span class="mi">6</span> <span class="n">COMPARE_OP</span>               <span class="mi">6</span> <span class="p">(</span><span class="ow">in</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+             <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p>这里需要注意的是当计算<code>0 or 1 in [2]</code>时，<code>JUMP_IF_TRUE_OR_POP</code>这一步为真时，直接跳转到了<code>RETURN_VALUE</code>而不会去执行<code>COMPARE_OP</code>，与之前<code>A or B and C</code>是不同的，不要思维惯性。
+由此可见，成员运算符<code>in</code>, <code>not in</code>和<code>and</code>, <code>or</code>, <code>not</code>平级，完全按照从左到右的顺序执行，若遇到<code>and</code>, <code>or</code>则在这基础上运用<code>短路</code>原则，读者可自行验证<code>not in</code>的情况。</p>
+<p>事实上，身份运算符<code>is</code>, <code>is not</code>也是同理，在执行过程中，身份运算符、成员运算符、逻辑运算符都是最低优先级。
+最后，回字的4种写法，如果你觉得<code>None and None is None</code>的值为<code>true</code>或<code>false</code>，那么你也许应该把上文再看一遍。</p>
+<h3>Reference</h3>
+<p>关于字节码和反汇编更多参见：
+<a href="https://opensource.com/article/18/4/introduction-python-bytecode">An introduction to Python bytecode</a>
+<a href="https://docs.python.org/3/library/dis.html">dis — Disassembler for Python bytecode</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/and-or-not/">posted at 22:37</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">9月 22, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/lxmlku-de-shi-yong/" rel="bookmark" title="Permanent Link to &quot;lxml库的使用&quot;">lxml库的使用</a>
+                </h2>
+
+                
+                
+
+                <p>在<code>python</code>中，有多种方式读写xml或html，标准库<code>xml</code>中提供了<code>ElementTree</code>, <code>SAX</code>, <code>DOM</code>几种方式，其中<code>ElementTree</code>相当于简化版的<code>DOM</code>，会在内存中存储结构化数据，而<code>SAX</code>则是事件驱动的，在打开大型xml文件时，就内存占用来说，<code>DOM</code> &gt; <code>ElementTree</code> &gt;&gt; <code>SAX</code>，但是由于迭代器的存在，<code>ElementTree</code>可以使用<code>iterparse()</code>来循环遍历文件，大大减少内存占用；除此以外，<code>python</code>还有第三方库<code>lxml</code>，使用c语言编写，解析xml的时候，能自动处理各种编码问题，并且与<code>ElementTree</code>同样支持XPath。</p>
+<h3>lxml</h3>
+<p><code>lxml</code>库中有一部分<code>API</code>是原始<code>ElementTree</code>的 <code>API</code>,由Fredrik Lundh在<code>ElementTree</code>库中定义，另一部分<code>API</code>是由<code>ElementTree</code>拓展而来。</p>
+<h4>安装</h4>
+<p>linux下安装：</p>
+<div class="highlight"><pre><span></span>pip install lxml
+</pre></div>
+
+
+<p>windows下安装：
+大概有两种方法，第一种是在windows下安装整个编译链；第二种方法是下载<a href="https://www.lfd.uci.edu/~gohlke/pythonlibs/">Unofficial Windows Binaries for Python Extension Packages</a>上编译好的wheel文件，然后运行：</p>
+<div class="highlight"><pre><span></span>pip install your_lxml_wheel_file.whl
+</pre></div>
+
+
+<h4>The Element class</h4>
+<h5>Elements</h5>
+<p>我们可以使用<code>getroot()</code>, <code>getchildren()</code>, <code>getparent()</code>来获得根元素、子元素、父元素，<code>getprevious()</code>, <code>getnext()</code>获得前一个或后一个元素，除此以外，<code>lxml</code>还提供类似于列表（list）的操作方法，所以我们可以使用<code>[]</code>来获取元素。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1"># 读取xml文件</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>   <span class="c1"># 获取根元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;root node:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>   <span class="c1"># &lt;Element root at 0x2eab188&gt;</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;serialise the tree you have created:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">serialise the tree you have created:</span>
+<span class="sd">&lt;root version=&quot;1.2&quot; tag=&quot;test&quot;&gt;</span>
+<span class="sd">    &lt;head id=&quot;1&quot;&gt;</span>
+<span class="sd">        &lt;title&gt;test xml file&lt;/title&gt;</span>
+<span class="sd">    &lt;/head&gt;</span>
+<span class="sd">    &lt;body id=&quot;2&quot;&gt;</span>
+<span class="sd">        &lt;items id=&quot;2-1&quot;&gt;item1&lt;/items&gt;</span>
+<span class="sd">        &lt;items id=&quot;2-2&quot;&gt;item2&lt;/items&gt;</span>
+<span class="sd">        &lt;items id=&quot;2-3&quot;&gt;item3&lt;/items&gt;</span>
+<span class="sd">    &lt;/body&gt;</span>
+<span class="sd">&lt;/root&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 使用[]获取元素</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>   <span class="c1"># &lt;Element head at 0x2eab148&gt;</span>
+<span class="c1"># 甚至使用类似数组切片的语法来来选取（注意即使选取1位，返回也会是数组）</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="c1"># [&lt;Element body at 0x2eab108&gt;]</span>
+
+<span class="c1"># 获取子元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;children node:&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">getchildren</span><span class="p">():</span>     
+    <span class="k">print</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">children node:</span>
+<span class="sd">&lt;Element head at 0x2eab108&gt;</span>
+<span class="sd">&lt;Element body at 0x2eab148&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="c1"># 获取父元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Whether root is the parent node of root[0]:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span> <span class="ow">is</span> <span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getparent</span><span class="p">())</span>   <span class="c1"># True</span>
+
+<span class="c1"># 使用getprevious(), getnext()获得前一个或后一个元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;access next and previous elements&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">root</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">getprevious</span><span class="p">())</span>  <span class="c1"># True</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getnext</span><span class="p">())</span>      <span class="c1"># True  </span>
+</pre></div>
+
+
+<p>若xml文档比较大，还可以使用itergetchildren方法。该方法得到一个生成器。这里，你可以用dir(root)可以查得元素对象有什么方法。可以获取兄弟元素、父元素等方法。</p>
+<p>可以使用<code>Element()</code>和<code>SubElement()</code>生成新的元素或是子元素：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="c1"># 生成元素</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;root node:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>   <span class="c1"># &lt;Element root at 0x33bb0c8&gt;</span>
+
+<span class="c1"># 使用SubElement()生成子元素</span>
+<span class="n">child1</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;child1&quot;</span><span class="p">)</span>
+<span class="c1"># 生成带有attribute的子元素。Element()同理</span>
+<span class="n">child1</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;child2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Tom&quot;</span><span class="p">)</span>
+
+<span class="c1"># 也可以使用append()来生成子元素</span>
+<span class="n">root</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;child3&quot;</span><span class="p">))</span>
+
+<span class="c1"># insert()同理</span>
+<span class="n">root</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;child4&quot;</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;serialise the tree you have created:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">serialise the tree you have created:</span>
+<span class="sd">&lt;root&gt;</span>
+<span class="sd">  &lt;child4/&gt;</span>
+<span class="sd">  &lt;child1/&gt;</span>
+<span class="sd">  &lt;child2 name=&quot;Tom&quot;/&gt;</span>
+<span class="sd">  &lt;child3/&gt;</span>
+<span class="sd">&lt;/root&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 删除子节点</span>
+<span class="c1"># root.remove(child2)</span>
+
+<span class="c1"># 删除所有子节点</span>
+<span class="c1"># root.clear()</span>
+</pre></div>
+
+
+<h5>tag and attribute</h5>
+<p>tag即元素节点名称，可以使用其属性<code>tag</code>获取：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1">#读取xml文件</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>   <span class="c1"># 获取根元素</span>
+
+<span class="c1"># 获取子元素他的tag</span>
+<span class="k">print</span><span class="p">([</span> <span class="n">c</span><span class="o">.</span><span class="n">tag</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">root</span> <span class="p">])</span>   <span class="c1"># output:[&#39;head&#39;, &#39;body&#39;]</span>
+</pre></div>
+
+
+<p>attribute可以使用<code>get()</code>, <code>set()</code>方法来获取或修改，也可以使用类似于字典的语法来操作：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="c1"># 新建一个attribute</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">,</span> <span class="n">interesting</span><span class="o">=</span><span class="s2">&quot;totally&quot;</span><span class="p">,</span> <span class="n">hello</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>   <span class="c1"># &lt;root hello=&quot;python&quot; interesting=&quot;totally&quot;/&gt;</span>
+
+<span class="c1"># 获得一个attribute</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">))</span>      <span class="c1"># python</span>
+
+<span class="c1"># 新建或修改一个attribute</span>
+<span class="n">root</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="s2">&quot;lxml&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>   <span class="c1"># &lt;root hello=&quot;lxml&quot; interesting=&quot;totally&quot;/&gt;</span>
+
+<span class="c1"># 获得root所有的attribute的名称</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>    <span class="c1"># [&#39;hello&#39;, &#39;interesting&#39;]</span>
+
+<span class="c1"># 获得root所有的attribute的名称和值</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> = </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">hello = &#39;lxml&#39;</span>
+<span class="sd">interesting = &#39;totally&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 像操作字典一样操作attribute</span>
+<span class="n">attributes</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span>
+
+<span class="c1"># 获得root的一个attribute</span>
+<span class="k">print</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">])</span>   <span class="c1"># lxml</span>
+
+
+<span class="c1"># 获得root的一个不存在的attribute</span>
+<span class="k">print</span><span class="p">(</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no-such-attribute&quot;</span><span class="p">))</span>   <span class="c1"># None</span>
+
+<span class="c1"># # 新建或修改root的一个attribute</span>
+<span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">])</span>   <span class="c1"># python</span>
+</pre></div>
+
+
+<h5>text</h5>
+<p>一般来说，访问元素的text可以使用其<code>text</code>, <code>tail</code>属性，也可以使用<code>findtext()</code>, <code>alltext()</code>方法或是<code>tostring()</code>函数，其细微差别如下：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 除了读取文件以外，lxml可以解析字符串</span>
+<span class="n">xml_text</span> <span class="o">=</span> <span class="s1">&#39;&lt;xml&gt;&lt;body&gt;Hello&lt;br/&gt;World&lt;items&gt;item1&lt;/items&gt;&lt;/body&gt;&lt;/xml&gt;&#39;</span>
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_text</span><span class="p">)</span>
+<span class="n">body</span> <span class="o">=</span> <span class="n">xml</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">br</span> <span class="o">=</span> <span class="n">xml</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># 使用text属性获取该元素的文本，不包括其子元素中的文本</span>
+<span class="k">print</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>   <span class="c1"># None</span>
+<span class="c1"># 这里因为出现了混合内容的XML，text属性无法获得&#39;World&#39;文本</span>
+<span class="k">print</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>  <span class="c1"># Hello</span>
+<span class="c1"># 要获得&#39;World&#39;文本，需要取得&#39;br&#39;元素并使用tail属性来获得元素后面的文本，直到XML树中的下一个元素</span>
+<span class="k">print</span><span class="p">(</span><span class="n">br</span><span class="o">.</span><span class="n">tail</span><span class="p">)</span>    <span class="c1"># World</span>
+
+<span class="c1"># findtext()也可获取某一元素中的文本，但同样无法获得&#39;World&#39;文本</span>
+<span class="k">print</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">))</span>  <span class="c1"># Hello</span>
+<span class="c1"># &#39;xml&#39;中无&#39;items&#39;元素，故返回None</span>
+<span class="k">print</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>  <span class="c1"># None</span>
+
+<span class="c1"># itertext()可以获取元素和其子元素中所有文本</span>
+<span class="c1"># 获取&#39;body&#39;中的&#39;hello&#39;, &#39;World&#39;文本</span>
+<span class="n">bodytext</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">itertext</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bodytext</span><span class="p">)</span>  <span class="c1"># Hello World item1</span>
+<span class="c1"># 获取&#39;xml&#39;中所有文本</span>
+<span class="n">alltext</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">itertext</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="n">alltext</span><span class="p">)</span>   <span class="c1"># Hello World item1</span>
+
+<span class="c1"># 要获取元素和其子元素中全部的文本也可以使用带有&#39;method&#39;关键词的tostring()函数</span>
+<span class="n">alltext</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">xml</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>   <span class="c1"># HelloWorlditem1</span>
+<span class="k">print</span><span class="p">(</span><span class="n">alltext</span><span class="p">)</span>
+
+<span class="c1"># 生成该XML只需反过来对元素的属性赋值即可</span>
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;xml&quot;</span><span class="p">)</span>
+<span class="n">body</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">xml</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">)</span>
+<span class="n">body</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Hello&quot;</span>
+<span class="n">br</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="s2">&quot;br&quot;</span><span class="p">)</span>
+<span class="n">br</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;world&quot;</span>
+<span class="n">items</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="s2">&quot;items&quot;</span><span class="p">)</span>
+<span class="n">items</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;item1&quot;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">xml</span><span class="p">))</span>   <span class="c1"># &lt;xml&gt;&lt;body&gt;Hello&lt;br/&gt;world&lt;items&gt;item1&lt;/items&gt;&lt;/body&gt;&lt;/xml&gt;</span>
+</pre></div>
+
+
+<h5>XPath</h5>
+<p>你可以使用XPath语法来便利的提取元素</p>
+<p>XPath常用规则：
+| 表达式            | 描述                                       |
+|-------------------|--------------------------------------------|
+| nodename          | 选取此节点的所有子节点                     |
+| /                 | 从当前节点选取直接子节点                   |
+| //                | 从当前节点选取子孙节点                     |
+| .                 | 选取当前节点                               |
+| ..                | 选取当前节点的父节点                       |
+| @                 | 选取属性                                   |
+| *                 | 通配符，选择所有元素节点与元素名           |
+| @*                | 选取所有属性                               |
+| [@attrib]         | 选取具有给定属性的所有元素                 |
+| [@attrib='value'] | 选取给定属性具有给定值的所有元素           |
+| [tag]             | 选取所有具有指定元素的直接子节点           |
+| [tag='text']      | 选取所有具有指定元素并且文本内容是text节点 |</p>
+<p>详细的XPath语法规则请参阅：<a href="http://www.w3school.com.cn/xpath/xpath_syntax.asp">XPath 语法</a></p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span>
+
+<span class="c1"># 选取所有&#39;items&#39;元素</span>
+<span class="n">items</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//items&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>  <span class="c1"># [&lt;Element items at 0x2f5c048&gt;, &lt;Element items at 0x2f58fc8&gt;, &lt;Element items at 0x2f58f88&gt;]</span>
+<span class="c1"># 选取元素后进行任意操作，比如获取某一attribute等</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">2-1</span>
+<span class="sd">2-2</span>
+<span class="sd">2-3</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 选取所有包含属性id=&quot;2-2&quot;的items元素</span>
+<span class="nb">id</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//items[@id=&quot;2-2&quot;]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>   <span class="c1"># item2</span>
+
+<span class="c1"># 也可使用&#39;//items[2]&#39;形式，但为了避免选中错误的&#39;item&#39;，通常应该在前面加入可靠的上级节点名称(tag)</span>
+<span class="nb">id</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//body/items[2]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>   <span class="c1"># item2</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">无论结果如何返回都是列表，故需要写成list[0]形式</span>
+<span class="sd">这里有一个坑就是，如果没有找到该元素，会返回空列表&#39;[]&#39;，此时执行[][0]显然会报错</span>
+<span class="sd">所以凡是涉及到列表操作都要小心，甚至检查返回是否是列表，以增强代码的健壮性</span>
+<span class="sd">以上代码在实际应用过程中应该写成如下格式</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//items[@id=&quot;2-4&quot;]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="c1"># raise   # 不要抛出错误</span>
+    <span class="k">print</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>   <span class="c1"># None</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</pre></div>
+
+
+<h5>树迭代(Tree iteration)</h5>
+<p>如果你希望以递归方式遍历树并对其元素执行某些操作，树迭代(Tree iteration)是一种非常方便的解决方案。元素为此提供树迭代器iter()。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1"># 读取xml文件</span>
+
+<span class="c1"># 元素拥有iter()方法可以以递归方式遍历树并返回其所有子元素</span>
+<span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">iter</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">root -</span>
+
+<span class="sd">head -</span>
+
+<span class="sd">title - test xml file</span>
+<span class="sd">body -</span>
+
+<span class="sd">items - item1</span>
+<span class="sd">items - item2</span>
+<span class="sd">items - item3</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 可以传入需要的元素名来过滤，结果就只会给出tag为&#39;root&#39;和&#39;head&#39;的元素</span>
+<span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">iter</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">,</span> <span class="s2">&quot;head&quot;</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">root -</span>
+
+<span class="sd">head -</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h4>The ElementTree class</h4>
+<h5>Parse</h5>
+<p>lxml.etree支持以多种方式从所有重要来源解析XML，即字符串，文件，URL（http/ftp）和类文件对象。主要的解析函数是<code>fromstring()</code>和<code>parse()</code>。默认情况下，它们使用标准解析器，但您始终可以将不同的解析器作为第二个参数传递。如果要配置解析器，可以创建新实例，在解析时删除标记之间的空文本，这可以减少树的大小，并避免悬空尾文本。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml_file</span> <span class="o">=</span> <span class="s2">&quot;../temporary_files/module_lxml_parser.xml&quot;</span>
+<span class="n">xml_text</span> <span class="o">=</span> <span class="s1">&#39;&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;&#39;</span>
+
+
+<span class="c1"># 默认情况下解析不会处理标签间的空格</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XML</span><span class="p">(</span><span class="n">xml_text</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_text</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">xml_file</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">可以利用etree.XMLParser()创建一个解析器,</span>
+<span class="sd">在解析时删除标记之间的空文本，这可以减少树的大小，并避免悬空尾文本,</span>
+<span class="sd">注意，&lt;b&gt;标记内的空白内容未被删除，标签内内容往往是数据内容（即使是空白）,</span>
+<span class="sd">您可以通过遍历树轻松地在其他步骤中删除它</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XMLParser</span><span class="p">(</span><span class="n">remove_blank_text</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XML</span><span class="p">(</span><span class="n">xml_text</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_text</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">xml_file</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">output:</span>
+<span class="sd">&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;&lt;a/&gt;&lt;b&gt;  &lt;/b&gt;&lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;&lt;a/&gt;&lt;b&gt;  &lt;/b&gt;&lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;&lt;a/&gt;&lt;b&gt;  &lt;/b&gt;&lt;/root&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h5>ElementPath</h5>
+<p>ElementTree库带有一个简单的类似XPath的路径语言，称为ElementPath。主要区别在于您可以在ElementPath表达式中使用{namespace}标记符号。但是，无法使用值比较和功能等高级功能。
+除了完整的XPath实现之外，lxml.etree以与ElementTree相同的方式支持ElementPath语言，甚至使用（几乎）相同的实现。 API提供了四种方法，您可以在Elements和ElementTrees上找到它们：</p>
+<blockquote>
+<ul>
+<li><code>iterfind()</code> iterates over all Elements that match the path expression</li>
+<li><code>findall()</code> returns a list of matching Elements</li>
+<li><code>find()</code> efficiently returns only the first match</li>
+<li><code>findtext()</code> returns the .text content of the first match</li>
+</ul>
+</blockquote>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1"># 读取xml文件</span>
+
+<span class="c1"># find()可以获得一个元素的子元素，但不包括子元素的子元素，finditer()和findall()同理</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">))</span>    <span class="c1"># &lt;Element body at 0x269a148&gt;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>   <span class="c1"># None</span>
+<span class="c1"># 同时find()只会返回第一个匹配的元素</span>
+<span class="n">body</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>   <span class="c1"># &lt;Element items at 0x2697ac8&gt;</span>
+<span class="c1"># 为了获取&#39;root&#39;中的第一个&#39;items&#39;，我们可以使用ElementPath</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.//items&#39;</span><span class="p">))</span>   <span class="c1"># &lt;Element items at 0x2697ac8&gt;</span>
+
+<span class="c1"># 要获得&#39;root&#39;中所有&#39;items&#39;，可以使用iterfind()，注意它会返回一个生成器</span>
+<span class="n">itemsGenerate</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">iterfind</span><span class="p">(</span><span class="s1">&#39;.//items&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">itemsGenerate</span><span class="p">)</span>    <span class="c1"># &lt;generator object at 0x0000000002608DC8&gt;</span>
+<span class="k">print</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">itemsGenerate</span><span class="p">])</span>
+<span class="c1"># output: [&lt;Element items at 0x2697ac8&gt;, &lt;Element items at 0x2697708&gt;, &lt;Element items at 0x26976c8&gt;]</span>
+
+<span class="c1"># findall()也可以达到同样效果，但它会返回一个列表</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;.//items&#39;</span><span class="p">))</span>
+<span class="c1"># output: [&lt;Element items at 0x2697ac8&gt;, &lt;Element items at 0x2697708&gt;, &lt;Element items at 0x26976c8&gt;]</span>
+
+<span class="c1"># 与find()不同，如果未找到元素，iterfind()返回的生成器不会yield任何值，而findall()返回空列表</span>
+<span class="n">itemsGenerate</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">iterfind</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">itemsGenerate</span><span class="p">)</span>    <span class="c1"># &lt;generator object at 0x0000000002608E58&gt;</span>
+<span class="k">print</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">itemsGenerate</span><span class="p">])</span>   <span class="c1"># []</span>
+<span class="c1"># print(root.iterfind(&#39;items&#39;))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>   <span class="c1"># []</span>
+
+<span class="c1"># findtext()于Elements.text章中介绍过</span>
+</pre></div>
+
+
+<h4>Reference</h4>
+<p>关于Serialisation和Namespaces请参阅官方教程<a href="https://lxml.de/tutorial.html">The lxml.etree Tutorial</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/lxmlku-de-shi-yong/">posted at 10:51</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/lxml.html" class="tags">lxml</a>
+                    &nbsp;<a href="/tag/xml.html" class="tags">xml</a>
+                    &nbsp;<a href="/tag/html.html" class="tags">html</a>
+                </div>
+            </article>            <h4 class="date">9月 16, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pipenvshi-yong-jin-jie/" rel="bookmark" title="Permanent Link to &quot;pipenv使用进阶&quot;">pipenv使用进阶</a>
+                </h2>
+
+                
+                
+
+                <h4>自定义虚拟环境的路径</h4>
+<p><code>pipenv</code>使用<code>pew</code>来管理虚拟环境的路径，我们可以自定义<code>WORKON_HOME</code>环境变量来设置虚拟环境的路径，或者使用<code>pipenv</code>内置的环境变量<code>PIPENV_VENV_IN_PROJECT</code>，将虚拟环境设置在每个项目的根目录下的<code>.venv</code>文件夹。</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">WORKON_HOME</span><span class="o">=</span>~/.venvs       <span class="c1"># default: ~/.virtualenvs/test-Shuk7a5m</span>
+<span class="c1"># or</span>
+<span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>   <span class="c1"># %project_root_path%/.venv</span>
+</pre></div>
+
+
+<p><code>bash</code>配置在<code>.bashrc</code>或<code>.bash_profile</code>中，<code>Zsh</code>配置在<code>.zshrc</code>，其它<code>Shell</code>以此类推，也可直接写入系统环境变量。</p>
+<h4>自动激活虚拟环境</h4>
+<p>配合<code>autoenv</code>或<code>virtualenv-autodetect</code>可实现自动激活环境，和设置<code>PIPENV_VENV_IN_PROJECT</code>环境变量可以自动激活虚拟环境。</p>
+<p>在.bashrc或.bash_profile中配置如下</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>
+<span class="nb">source</span> /path/to/virtualenv-autodetect.sh
+</pre></div>
+
+
+<p>如果使用了oh-my-zsh, 可以直接使用它的插件形式</p>
+<div class="highlight"><pre><span></span><span class="c1"># 安装插件</span>
+$ git@github.com:RobertDeRose/virtualenv-autodetect.git ~/.oh-my-zsh/custom/plugins
+</pre></div>
+
+
+<p>再修改.zshrc文件启动插件</p>
+<div class="highlight"><pre><span></span><span class="c1"># 找到启动plugins的行添加启用插件</span>
+<span class="nv">plugins</span><span class="o">=(</span>... virtualenv-autodetect<span class="o">)</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pipenvshi-yong-jin-jie/">posted at 17:03</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/technicalbasics.html" class="tags">technicalBasics</a>
+                </div>
+            </article>
+
+                <div class="clear"></div>
+                <div class="pages">
+                        <a href="/page/2" class="next_page">Next&nbsp;&rarr;</a>
+                    <span>Page 1 of 3</span>
+                </div>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

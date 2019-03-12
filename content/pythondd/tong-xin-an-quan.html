@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | 通信安全</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="problem" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">3月 12, 2019</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/pythondd/tong-xin-an-quan/" rel="bookmark" title="Permanent Link to &quot;通信安全&quot;">通信安全</a>
+                </h2>
+
+                
+                
+
+                <h1>通信安全（入门篇）</h1>
+<p>通常来说，确保通信中的安全主要分为三个方面：</p>
+<ul>
+<li>机密性</li>
+<li>完整性</li>
+<li>身份验证</li>
+</ul>
+<p>当然，还有生成密钥时伪随机数生成器的不可预测性，这是最基础的，否则以上三点根本无从谈起。</p>
+<h2>对称密钥加密和非对称密钥加密</h2>
+<p>常见对称密钥加密的有<code>DES</code>, <code>AES</code>等，非对称密钥加密有<code>DSA</code>, <code>RSA</code>，<code>ECDSA</code>等。
+两者区别在于对称密钥在加密和解密的时候使用相同的密钥，而非对称密钥则分为公钥和私钥，分别用来加密和验证身份；显然，后者需要更多开销，但在网络通信时，前者的密码被迫需要在网络上传输，存在被截取并破解的风险，而本文也侧重于网络通信的安全，故下文提到的加密如无特殊说明，均指非对称密钥加密。</p>
+<h2>单向散列函数</h2>
+<p>单向散列函数也称为消息摘要函数、单向哈希函数，常见单向散列函数有<code>MD5</code>, <code>SHA-1</code>, <code>SHA-2</code>, <code>SHA-3</code>等，前两种已经不再安全。
+单向散列函数不能保证消息的机密性，而是完整性(integrity)，即数据是正确的，而不是伪造的，我们通常使用它来检测数据是否被篡改，因为检查消息的摘要比检查消息本身更加容易，它的本质是消息完整性的压缩。</p>
+<h2>非对称密钥加密过程</h2>
+<p>假设<code>A</code>需要发送消息给<code>B</code>，但是<code>A</code>并不想让其它人知道消息的内容，那么<code>A</code>只需要使用<code>B</code>的公钥加密消息，生成密文，而<code>B</code>接收到到密文以后只需要用自己对应的私钥解密即可，因为公钥加密的数据只有使用私钥才能解密，这一点是由算法保证的（至少是很难破解），所以可以保证消息无法被别人破译，即机密性。</p>
+<h2>数字签名</h2>
+<p>仔细想想就会发现，上面的过程存在一个问题，因为<code>B</code>的公钥是公开的，所以任何人都可以使用<code>B</code>的公钥冒充<code>A</code>给<code>B</code>发送消息，所以<code>A</code>需要提供一个证明自己身份的方法，比如说<code>A</code>也有一对密钥，然后使用自己私钥进行数字签名，然后<code>B</code>使用<code>A</code>的公钥进行解密<sup id="fnref:1"><a class="footnote-ref" href="#fn:1" rel="footnote">1</a></sup>。
+具体来说，这分为两种，一种是对消息本身进行签名，另一种是对消息的单向散列值进行签名，通常我们采用第二种，因为对消息本身进行非对称密钥加密和解密是非常消耗资源的，而且对于第一种方法来说，我们无法验证接受的加密消息的完整性，虽然一定程度上可以依赖于传输协议的校验，但是通常来说，这些校验不会太过细致。
+那么，通常情况下数字签名的过程如下：</p>
+<ol>
+<li><code>A</code>使用单向散列函数对消息进行<code>hash</code>运算得到消息的摘要</li>
+<li><code>A</code>使用自己的私钥对摘要进行加密，生成数字签名</li>
+<li>把消息和签名合并，并发送给<code>B</code><sup id="fnref:2"><a class="footnote-ref" href="#fn:2" rel="footnote">2</a></sup></li>
+<li><code>B</code>接收到消息，使用<code>A</code>的公钥对数字签名进行解密，如果成功得到摘要则说明消息来自于<code>A</code></li>
+<li>之后求出消息的摘要并与上一步解密出来的摘要进行对比，一致则说明消息未被篡改</li>
+</ol>
+<p>如果单纯的使用数字签名和单向散列函数，首先发送的消息其实没有被加密，而在第4步也存在暴露消息或者被篡改消息的风险，虽然通过<code>hash</code>值无法反推原始消息，但是因为消息-&gt;摘要基本上是一一对应的，所以如果有足够多的原始消息，则可以反向得到一张摘要-&gt;消息的表（即彩虹表）从而得到原始消息（主要对于密码等简短的字符串），另外，虽然概率非常小，但确实存在两则不同的消息具有相同的摘要，如果发现一种快速的碰撞方法可以计算出相同摘要的不同消息，就可以替换掉原本的消息而不会被发现，当然，这样存在非常多的限制。对于单向散列函数，我们也可以使用更安全的算法来规避风险，比如说<code>SHA-2</code>或<code>SHA-3</code>，一般来说，单向散列函数都不会单独使用，否则不如使用消息验证码<code>MAC</code>或<code>HMAC</code>。而且在生产环境中，第3步之后会把消息和签名全部加密，不存在得到<code>A</code>的公钥，从而解密数字签名得到摘要的情况，所以说机密性，完整性，身份验证是缺一不可的。</p>
+<p>当然，对于数字签名来说，无论第3步有没有保证机密性，同时替换消息和签名的可能是不存在的，因为生成签名需要<code>A</code>的私钥而本文假定私钥不会被泄露，所以......不存在这个问题。事实上，私钥通常也是加密保存的，可能需要口令才能解密，在这个过程中甚至可能会有加入<code>sult</code>等操作，这个看具体规范，本文对于解密私钥的过程均没有列出。</p>
+<p>唯一的问题是，对于<code>B</code>来说，如何确认宣称为“<code>A</code>的公钥”的公钥的确属于<code>A</code>，如果是当面给予的那没有问题，但现在是网络传输，如何在不可信的状况下创造出信任关系，那么就需要一个第三方了。</p>
+<h2>数字证书</h2>
+<p>证书机构(CA, certificate authority)就是这样一个第三方机构，<code>A</code>需要在证书机构注册自己的公钥，然后证书机构会采用一些方法来验证<code>A</code>的确是公钥的拥有者，之后证书机构会使用自己的私钥来加密<code>A</code>的公钥<sup id="fnref:3"><a class="footnote-ref" href="#fn:3" rel="footnote">3</a></sup>，生成数字签名，除此以外，一个证书的信息还包括序列号，签名算法，颁发者，被签发主体，有效期等，具体可以参见<a href="https://tools.ietf.org/html/rfc5280">X.509证书规范</a>，总之，最后生成一个证书。
+那么在通信的过程中，<code>A</code>只要在消息后面附上自己的签名和证书即可，<code>B</code>接收到后使用<code>CA</code>的公钥对<code>CA</code>的数字证书进行验证，成功则说明证书有效，从证书中取出<code>A</code>的公钥，之后一切同数字签名时的过程。
+总结一下就是，数字证书把原来需要验证某人的公钥是否属于某人的需求变成了验证某个<code>CA</code>的公钥是否属于某个<code>CA</code>，而这个需求最后变为你是否信任该<code>CA</code>及其下属<code>CA</code>的证书，在主流的操作系统和浏览器中，往往会内置一些权威<code>CA</code>的证书，这些证书默认是被信任的（合法），所以可以保证其中的公钥没有问题。
+那么问题来了，全世界有那么多<code>CA</code>，然后它们有这么多的下属<code>CA</code>，难道要把这么多<code>CA</code>的证书都内置一份吗？这个就涉及到证书链的问题，证书链简单来说就是如果<code>root certificate</code>信任<code>intermediate certificate</code>，而<code>intermediate certificate</code>信任<code>end-entity certificate</code>，那么<code>root certificate</code>就信任<code>end-entity certificate</code>，所以只要内置需要验证的证书的上一级证书即可。
+那么第二个问题，怎么验证根证书？根证书可以自己验证自己，即自签名。
+最后，如果内置的数字证书本身是有问题的......关键还是信任或者不信任...所以说，安全只有相对安全...</p>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:1">
+<p>这里与使用公钥加密不同，模型被反转了，使用私钥加密的文件任何人都可以解密，所以这是一种身份验证的方法，不保证机密性&#160;<a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>为了保证机密性，这里通常需要进行加密，可以直接使用<code>B</code>的公钥来进行加密，或是使用一个会话密钥来加密，然后再用<code>B</code>的公钥加密会话密钥，因为要加密消息和签名，所以使用第二种对称密钥的方法开销更少，解密时同理，但这些不属于数字签名的范畴&#160;<a class="footnote-backref" href="#fnref:2" rev="footnote" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>准确的来说是使用该证书机构的上一级证书机构的私钥来签名，认证的时候也使用上一级证书机构的公钥来认证&#160;<a class="footnote-backref" href="#fnref:3" rev="footnote" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/pythondd/tong-xin-an-quan/">posted at 15:19</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythondd.html" rel="tag">python.dd</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

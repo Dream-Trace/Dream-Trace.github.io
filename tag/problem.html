@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | articles tagged "problem"</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li class="ephemeral selected"><a href="/tag/problem.html">problem</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">9月 08, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling/" rel="bookmark" title="Permanent Link to &quot;数值转成N位字符串时如何保留前方无效的零&quot;">数值转成N位字符串时如何保留前方无效的零</a>
+                </h2>
+
+                
+                
+
+                <p>python中有一个容易忽略的陷阱，比方说你打算在一个大字符串中找一个数字，现在你有了一个函数（比如说<code>str.find()</code>），我们当然知道要传入一个数字字符串，但如果是纯数字呢，这个时候可能会理所当然的想到转义，比如<code>str(number)</code>，那么问题来了，如果你要找的数值前有零，直接转换的结果可能会出乎你的意料：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 需要注意的是数值前若有一个零，那么该数值会被认为是八进制数，导致结果不同</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>   <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 若数值前有两个或两个以上的零，则无效零将被舍去</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">0010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 以上结果为python2.x上运行所得，在python3.x上均会报错：SyntaxError: invalid token</span>
+<span class="c1"># 所以要想在python3.x上转换八进制数，需要写成如下格式</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+
+<span class="c1"># 而如果使用格式化字符串,无论是在python2.x还是python3.x上都会被认为是八进制数</span>
+<span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="mo">010</span>          <span class="c1"># &#39;8&#39;</span>
+<span class="s2">&quot;{:d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+</pre></div>
+
+
+<p>所以，依靠直接在数字前补零来转换是不可能的，不是被识别成八进制数，就是多余的零被舍去，所以正确的做法是在字符串下加入'0'</p>
+<div class="highlight"><pre><span></span><span class="c1"># str.zfill() and str.rjust</span>
+<span class="n">number_str</span> <span class="o">=</span> <span class="s1">&#39;123&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">zfill(...)</span>
+<span class="sd">    S.zfill(width) -&gt; string</span>
+
+<span class="sd">    Pad a numeric string S with zeros on the left, to fill a field</span>
+<span class="sd">    of the specified width.  The string S is never truncated.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">number_str</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">rjust(...)</span>
+<span class="sd">    S.rjust(width[, fillchar]) -&gt; string</span>
+
+<span class="sd">    Return S right-justified in a string of length width. Padding is</span>
+<span class="sd">    done using the specified fill character (default is a space)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">number_str</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+
+<span class="c1"># 以上方法都是直接在字符串前补零，若数值不是十进制则会出现问题</span>
+<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>       <span class="c1"># &#39;000x2000&#39;</span>
+<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>  <span class="c1"># &#39;000x2000&#39;</span>
+
+<span class="c1"># 所以转换十六进制或八进制或二进制数值我们使用格式化字符串</span>
+<span class="s2">&quot;{:08x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0x2000</span><span class="p">)</span>   <span class="c1"># &#39;00002000&#39;     (Memory usage: 32bits)</span>
+<span class="s2">&quot;{:08o}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>     <span class="c1"># &#39;00000010&#39;     (Memory usage: 24bits)</span>
+<span class="s2">&quot;{:08b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mb">0b1010</span><span class="p">)</span>   <span class="c1"># &#39;00001010&#39;     (Memory usage: 8bits)</span>
+<span class="c1"># 之后如有需要，在前面补上&#39;0x&#39;, &#39;0o&#39;, &#39;0b&#39;的前缀即可</span>
+<span class="c1"># &#39;%&#39;格式化除了不能格式化二进制以外同理</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling/">posted at 11:02</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags selected">problem</a>
+                </div>
+            </article>            <h4 class="date">9月 04, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/han-shu-mo-ren-can-shu-wei-ke-bian-shu-ju-lei-xing-de-wen-ti/" rel="bookmark" title="Permanent Link to &quot;函数默认参数为可变数据类型的问题&quot;">函数默认参数为可变数据类型的问题</a>
+                </h2>
+
+                
+                
+
+                <h4>当函数拥有一个可变类型的默认参数..</h4>
+<p>众所周知，python中的数据类型分为可变(mutable)和不可变(immutable)两种类型，这里暗含一个巨大的坑就是当函数的默认参数为可变(mutable)类型时，函数的运行结果可能会出乎你的意料，让我们来看一个例子：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generateCommand</span><span class="p">(</span><span class="n">baseCommand</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="c1"># read config and generate command option</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;This is&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;command option&#39;</span><span class="p">]</span>
+    <span class="n">baseCommand</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baseCommand</span>
+
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;, &#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+</pre></div>
+
+
+<p>可以看出，默认参数只会运算一次，而不是每次被调用时都会重新运算，而<code>baseCommand</code>是一个可变类型，导致如果没有赋值，每次新的计算时都不会重新将其赋值为空列表.</p>
+<h4>怎样避免？</h4>
+<p>我们定义默认参数时应该尽量避免使用可变参数，比如像下面这样：（如果一定需要则需要写明注释，防止其他人调用接口出错）</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generateCommand</span><span class="p">(</span><span class="n">baseCommand</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">baseCommand</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>   <span class="c1"># Can be written as &#39;baseCommand == None&#39;, but use &#39;is&#39; faster.</span>
+        <span class="n">baseCommand</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># read config and generate command option</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;This is&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;command option&#39;</span><span class="p">]</span>
+    <span class="n">baseCommand</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baseCommand</span>
+
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+</pre></div>
+
+
+<p>值得注意的是，对于<code>None</code>来说，因为其有且仅有一个，所以可以使用<code>is None</code>代替<code>== None</code>，而事实上使用<code>is</code>速度更快，因为<code>is</code>是一个快速的<code>id</code>比较，而<code>==</code>需要调用内置函数<code>__eq__()</code>并查找被比较的值进行比较。</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/han-shu-mo-ren-can-shu-wei-ke-bian-shu-ju-lei-xing-de-wen-ti/">posted at 21:14</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags selected">problem</a>
+                </div>
+            </article>            <h4 class="date">5月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonzhong-de-xiao-lu-wen-ti/" rel="bookmark" title="Permanent Link to &quot;python中的效率问题&quot;">python中的效率问题</a>
+                </h2>
+
+                
+                
+
+                <h3>python的效率问题</h3>
+<h4><code>for...in...</code> or <code>while</code></h4>
+<p>在python中严格意义上<code>for...in...</code>并不是用于循环的，所以当使用<code>for i in range(0, number)</code>来做循环时，在python2.7下与<code>while</code>相比，在<code>number&lt;10</code>时，<code>while</code>效率比其高2~5倍，超过10，则其效率之比逐渐缩小，无限趋向于相等，通常此时<code>while</code>效率仍比<code>for...in...</code>高，内存使用率上来说，<code>for...in...</code>由于生成了一个列表，内存占用远大于<code>while</code>。若使用<code>xrange</code>代替<code>range</code>，情况大致和之前一致，只是<code>number&gt;1000</code>后有较大概率<code>while</code>被<code>for...in...</code>略微反超。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="n">testList</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">length</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;list length = </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">length</span><span class="p">)</span>
+
+<span class="n">start</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">length</span><span class="p">):</span>
+    <span class="n">testList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100000</span><span class="p">))</span>
+<span class="n">end</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;for  &quot;</span><span class="p">,</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+
+<span class="n">start</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">while</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+    <span class="n">testList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100000</span><span class="p">))</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="n">end</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;while&quot;</span><span class="p">,</span><span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+</pre></div>
+
+
+<h2>在字典中查找</h2>
+<p>在字典中查找<code>key</code>时，不要使用<code>k in dict.keys()</code>，而应该使用<code>k in dict</code>的形式，后者是根据<code>hash</code>来查找的，与在<code>set</code>中查找运算量相同，而前者在<code>python2</code>中返回一个列表<code>&lt;type 'list'&gt;</code>，在<code>python3</code>中返回一个对象<code>&lt;class 'dict_keys'&gt;</code>。
+当处于<code>for...in...</code>结构时，前者在<code>python2</code>中返回一个列表，<code>iterkeys()</code>才返回一个迭代器，在<code>python3</code>中始终返回一个迭代器（隐式），详见<a href="https://stackoverflow.com/a/3617008">stackoverflow</a></p>
+<h2>is None</h2>
+<p>对于<code>None</code>来说，因为其有且仅有一个，所以可以使用<code>is None</code>代替<code>== None</code>，而事实上使用<code>is</code>速度更快，因为<code>is</code>是一个快速的<code>id</code>比较，而<code>==</code>需要调用内置函数<code>__eq__()</code>并查找被比较的值进行比较。</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonzhong-de-xiao-lu-wen-ti/">posted at 17:16</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags selected">problem</a>
+                </div>
+            </article>            <h4 class="date">2月 04, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonzhong-de-yi-xie-zhu-yi-dian/" rel="bookmark" title="Permanent Link to &quot;python中的一些注意点&quot;">python中的一些注意点</a>
+                </h2>
+
+                
+                
+
+                <ul>
+<li>在Pyhon 2.x版本里，<code>open()</code>不支持显示地指定编码。然而，<code>io.open()</code>函数在Python 2.x中和3.x(其中它是<code>open()</code>的别名)中都有提供，它能做正确的事。你可以传入<code>encoding</code>这个关键字参数来传入编码。</li>
+<li>对于例如<code>%env%/target_file</code>这样的环境变量，要使用<code>os.path.expandvars(path)</code>而不是<code>os.path.abspath(path)</code></li>
+<li>在python2.7中如果要生成如下二进制文件：
+  <img alt="二进制文件" src="images/python中的一些注意点01.jpg">
+  不能使用:
+  <code>python
+  with open('test.bin', 'wb') as f:
+      f.write(b'FFEEDDCCBBAA00998877665544332211')</code>
+  这样生成的文件为：
+  <img alt="二进制文件" src="images/python中的一些注意点02.jpg">
+  应该写成类似<code>\xFF</code>的形式：
+  <code>python
+  # 'w'与`wb`没有什么差别
+  with open('test.bin', 'w') as f:
+      f.write  ('\xFF\xEE\xDD\xCC\xBB\xAA\x00\x99\x88\x77\x66\x55\x44\x33\x22\x11')</code></li>
+<li><code>os.path.join()</code>拼接会从第一个以”/”开头的参数开始拼接，之前的参数全部丢弃。
+  ```python
+  os.path.join(os.path.abspath('E:\test'), 'demo.txt')      # 'E:\test\demo.txt'
+  # 若第二参数前加了'\'
+  os.path.join(os.path.abspath('E:\test'), '\demo.txt')     # 'E:\demo.txt'</li>
+<li>在<code>python3</code>中所有<code>int</code>都为<code>long</code>，但是<code>python2</code>中分为<code>int</code>和<code>long</code>，所以在<code>python2</code>中使用<code>isinstance</code>时务必要注意不要漏了<code>long</code>的情况
+  ```</li>
+<li>要对<code>byte</code>或是<code>half-word</code>取反，使用<code>byte ^ 0xff</code>的形式而不是<code>~</code>，因为<code>~</code>是对于<code>int</code>(32/64 bits)取反</li>
+</ul>
+<h2>UnboundLocalError</h2>
+<p>我们知道，python的作用域遵循<code>LEGB</code>原则的，所以下面的代码是可以正常执行的：</p>
+<div class="highlight"><pre><span></span><span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;global&#39;</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="k">print</span> <span class="n">var</span>
+</pre></div>
+
+
+<p>但是如果在<code>foo()</code>内定义一个<code>local</code>的<code>var</code>变量，则会报错：</p>
+<div class="highlight"><pre><span></span><span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;global&#39;</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="k">print</span> <span class="n">var</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;local&#39;</span>
+<span class="c1"># UnboundLocalError: local variable &#39;var&#39; referenced before assignment</span>
+</pre></div>
+
+
+<p>可见，Python在确定变量引用的对象时，是在整块作用域扫描完毕后才确定的，而不是在逐行执行的时候</p>
+<h2>关于os.path的一些问题</h2>
+<ul>
+<li><code>os.path.abspath</code>: 返回绝对地址</li>
+<li><code>os.path.relpath</code>: 返回相对地址，这里的<code>相对</code>指的是<strong>相对于运行py文件的路径</strong></li>
+<li><code>os.path.expandvars</code>: 把路径中诸如<code>$name</code>, <code>${name}</code>, <code>%name%</code>环境变量替换成相应的值，<code>Linux</code>中支持前两种，<code>windows</code>中三种都支持</li>
+<li><code>os.path.expanduser</code>: 把path中包含的"~"和"~user"转换成用户目录</li>
+</ul>
+<h2>关于subprocess使用过程中的一些问题</h2>
+<p>工作中使用<code>subprocess</code>库时遇到一个问题，简要描述一下，工作目录大致如下：</p>
+<div class="highlight"><pre><span></span>|--python
+|  |--A.py
+|--tool
+|  |--dependence
+|    |--C.bin
+|  |--B.exe
+|  |--D.json
+</pre></div>
+
+
+<p>若python文件<code>A</code>执行目录与被调用程序<code>B</code>处于不同目录，被调用程序调用文件<code>C</code>时的路径设置有问题(没有计算当前绝对地址或相对地址，而是使用固定的字符串来表示地址)导致找不到文件<code>C</code>，那么，在不能修改被调用程序的情况下，加入<code>cwd</code>参数可以解决此问题：</p>
+<div class="highlight"><pre><span></span><span class="n">args</span> <span class="o">=</span> <span class="s1">&#39;called_program_path arg1 arg2 ..&#39;</span>
+<span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">called_program_dir</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+</pre></div>
+
+
+<p>此时，<code>called_program_path</code>必须在<code>A</code>中进行计算，绝对地址<code>abspath</code>或相对地址<code>relpath</code>均可，而在参数中比如<code>arg1</code>中的文件<code>D</code>可以直接写文件名或者绝对地址，不能写相对路径，因为相对路径是<code>D</code>相对于<code>A</code>的地址，而此时<code>cwd</code>的值是调用程序<code>B</code>的目录，即对于调用程序<code>B</code>来说，执行的地址就是<code>B</code>的目录，而不是<code>A</code>的目录，参照点是不同的。</p>
+<h2>关于open的模式的问题</h2>
+<p>r  打开只读文件，该文件必须存在。
+r+  打开可读写的文件，该文件必须存在，可覆写（<code>seek()</code>有效）。
+w  打开只写文件，若文件存在则文件长度清为0，即该文件内容会消失。若文件不存在则建立该文件，可覆写（<code>seek()</code>有效）。
+w+  打开可读写文件，若文件存在则文件长度清为零，即该文件内容会消失。若文件不存在则建立该文件，可覆写（<code>seek()</code>有效）。
+a  以附加的方式打开只写文件。若文件不存在，则会建立该文件，如果文件存在，写入的数据会被加到文件尾（<code>seek()</code>无效），即文件原先的内容会被保留。
+a+  以附加方式打开可读写的文件。若文件不存在，则会建立该文件，如果文件存在，写入的数据会被加到文件尾（<code>seek()</code>无效），即文件原先的内容会被保留。
+wb 在windows下，以二进制进行存储，\r\n才是换行
+w 是以文本方式进行存储\n是换行
+rb 取出来的也是\r\n
+r 取出来的是\n</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonzhong-de-yi-xie-zhu-yi-dian/">posted at 15:19</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags selected">problem</a>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

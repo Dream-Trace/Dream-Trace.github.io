@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | pelican using Github Pages</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">2月 25, 2019</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pelican using Github Pages/" rel="bookmark" title="Permanent Link to &quot;pelican using Github Pages&quot;">pelican using Github Pages</a>
+                </h2>
+
+                
+                
+
+                <h1>前言</h1>
+<p>在读这篇文章之前，请确保本地已经搭建工作环境<code>python</code>, <code>git</code>, 推荐使用<code>pipenv</code>来管理虚拟环境。</p>
+<div class="highlight"><pre><span></span>cd output
+git init
+git add .
+git commit -m &quot;first commit&quot;
+git remote add origin https://github.com/xxx/xxx.github.io.git
+git branch --set-upstream-to=origin/&lt;branch&gt; release
+git push -u origin master
+</pre></div>
+
+
+<p>git clone https://github.com/getpelican/pelican-themes.git --recursive</p>
+<p>git push -u origin master -f</p>
+<p>$ git pull origin master</p>
+<p>$ git push -u origin master</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;p&gt;&lt;code&gt;</span>python\ndef initPySerialUartPort(port, baudrate):\n    ser = serial.Serial()\n    ser.port     = port\n    ser.baudrate = baudrate\n    ser.bytesize = serial.EIGHTBITS\n    ser.parity   = serial.PARITY_NONE\n    ser.stopbits = serial.STOPBITS_ONE\n    ser.timeout  = 10 #seconds\n    if not ser.isOpen():\n        ser.open()\n    return ser<span class="nt">&lt;/code&gt;&lt;/p&gt;</span>
+</pre></div>
+
+
+<p>https://github.com/google/code-prettify</p>
+<p>https://prismjs.com/
+prism.js 中搜索<code>[class*="language-"]</code>，会发现一个用于选择的字符串：<code>'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'</code>用于选择的字符串，在其前面添加<code>code,</code>
+prism.css 删除所有[class*="language-"]</p>
+<p>https://highlightjs.org/download/</p>
+<p>MARKDOWN = {
+    'extension_configs': {
+        # 'markdown.extensions.codehilite': {'css_class': 'highlight'},
+        'markdown.extensions.extra': {},
+        'markdown.extensions.meta': {},
+    },
+    'output_format': 'html5',
+}</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pelican using Github Pages/">posted at 20:50</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

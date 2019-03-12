@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | and or not</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">11月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/and-or-not/" rel="bookmark" title="Permanent Link to &quot;and or not&quot;">and or not</a>
+                </h2>
+
+                
+                
+
+                <h2>and or not</h2>
+<h3>何为真？何为假？</h3>
+<p>首先，要明确的是虽然布尔值只有<code>True</code>和<code>False</code>两种，但是在计算（<code>if</code>，<code>while</code>或表达式）中，以下的值会被认为是<code>False</code>值：</p>
+<ul>
+<li><code>None</code></li>
+<li><code>False</code></li>
+<li>任何数字类型的零值，如：<code>0</code>, <code>0L</code>, <code>0.0</code>, <code>0j</code></li>
+<li>任何长度为<code>0</code>的对象：<ul>
+<li>任何空序列，如：<code>''</code>, <code>()</code>, <code>[]</code></li>
+<li>任何空映射，如：<code>{}</code></li>
+<li>用户定义的类的实例，如果该类定义<code>__nonzero__()</code>或<code>__len __()</code>方法，则当该方法返回整数<code>0</code>或bool值<code>False</code></li>
+</ul>
+</li>
+</ul>
+<p>所有其他值都被认为是<code>True</code></p>
+<p>除非另有说明，具有布尔结果的操作和内置函数总是返回0或False表示false，1或True表示true。 （重要的例外：布尔运算或者并且始终返回其中一个操作数。）</p>
+<h3>短路</h3>
+<p>在大多数语言中，<code>and</code>和<code>or</code>都具有短路效应，比如对于<code>A and B</code>来说，如果判定<code>A</code>为<code>False</code>，那整个表达式一定为<code>False</code>，故不必计算后面的值（除非后面有布尔运算符<code>or</code>），表达式等同于执行<code>A if not A else B</code>；<code>or</code>运算符同理。</p>
+<p>值得注意的是，<code>and</code>和<code>or</code>返回的是操作数而不是布尔值，而<code>not</code>则返回布尔值。</p>
+<div class="highlight"><pre><span></span><span class="c1"># and, or </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span>
+<span class="mi">2</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">2</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="mi">1</span>
+<span class="s1">&#39;&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="bp">None</span> <span class="ow">or</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">3</span>
+<span class="mi">3</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">2</span>
+<span class="mi">1</span>
+<span class="c1"># not</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">0</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<h3>优先级</h3>
+<p>先声明一点，<code>and</code>, <code>or</code>, <code>not</code>三者之间是没有任何优先级关系的。
+有些人认为优先级<code>not &gt; and &gt; or</code>，这纯粹是无稽之谈，<a href="https://docs.python.org/3.7/library/stdtypes.html#boolean-operations-and-or-not">官方文档</a>中的确提到：</p>
+<blockquote>
+<p>"These are the Boolean operations, ordered by ascending priority"</p>
+</blockquote>
+<p>但仔细阅读一下你会这里的排序是指<code>Notes</code>的排序而不是优先级，<strong>三者的计算顺序单纯的是从左往右并按照短路的原则进行计算</strong>。</p>
+<h4><code>not</code>具有更高优先级吗？</h4>
+<p><code>and</code>, <code>or</code>姑且不论，当把<code>not</code>和它们放在一起时，似乎<code>not</code>具有更高的优先级，这的确会使人迷惑，比如<code>0 or not 1</code>中是先计算<code>not 1</code>结果为<code>False</code>，之后再计算<code>0 or False</code>，结果等于<code>False</code>。这种论调推导出来的结论的确是对的，关于这一点我们谁也说服不了谁，所以让我们深入一点，借助<code>dis</code>模块来看看代码到底是怎么执行的：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">dis</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">10</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">UNARY_NOT</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">10</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p>这里为了演示方便，使用<code>lambda</code>表达式构建了一个返回<code>0 or not 1</code>表达式值的函数，使用普通函数可以达到同样效果。
+关于<code>dis</code>输出格式解释如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">源代码中的行号</th>
+<th align="center">字节码指令中的偏移量</th>
+<th align="center">字节码指令名称</th>
+<th align="center">指令的参数</th>
+<th align="center">实际参数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">2</td>
+<td align="center">0</td>
+<td align="center">LOAD_CONST</td>
+<td align="center">1</td>
+<td align="center">(0)</td>
+</tr>
+</tbody>
+</table>
+<p><code>LOAD_CONST</code>指令将整数<code>0</code>压入堆栈(stack)，之后执行<code>JUMP_IF_TRUE_OR_POP</code>命令，判断<code>0</code>，即栈顶（TOS:top-of-stack）是否为真，如果TOS为真，将字节码计数器设置为<code>10</code>，即跳转到字节码中偏移量为<code>10</code>的地方，并在堆栈上留下TOS；否则（TOS为假），弹出(pop)TOS。到这一步明显看出计算过程中先执行了<code>or</code>运算符，当<code>or</code>运算符左侧为真时，跳转执行<code>RETURN_VALUE</code>将TOS传给函数调用者；当<code>or</code>运算符左侧为假时，才将整数<code>1</code>压入堆栈(stack)，并执行<code>UNARY_NOT</code>运算，最后执行<code>RETURN_VALUE</code>返回<code>False</code>。可见<code>not</code>并没有比<code>and</code>和<code>or</code>更高的优先级。</p>
+<h4><code>and</code>, <code>or</code>也具有相同优先级</h4>
+<p>至于<code>and</code>和<code>or</code>的优先级：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">5</span> <span class="ow">and</span> <span class="mi">4</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">5</span> <span class="ow">and</span> <span class="mi">4</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_FALSE_OR_POP</span>    <span class="mi">15</span>
+             <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">5</span> <span class="ow">or</span> <span class="mi">4</span>
+<span class="mi">5</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">5</span> <span class="ow">or</span> <span class="mi">4</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">POP_JUMP_IF_FALSE</span>       <span class="mi">12</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p><code>POP_JUMP_IF_FALSE</code>命令的作用为：如果TOS为假，将字节码计数器设置为参数值并弹出TOS。也就是说，形如<code>A and B or C</code>这种格式如果<code>A</code>判断为<code>False</code>，那么整个式子的值就为<code>C</code></p>
+<h4><code>not</code>与<code>==</code>的优先级</h4>
+<p>那么<code>not</code>与<code>==</code>的优先级谁高谁低呢？</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">==</span> <span class="bp">True</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_GLOBAL</span>              <span class="mi">0</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">COMPARE_OP</span>               <span class="mi">2</span> <span class="p">(</span><span class="o">==</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">UNARY_NOT</span>
+             <span class="mi">10</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p><code>not 2 == True</code>的结果为<code>True</code>说明了<code>==</code>的优先级大于<code>not</code>，<code>1 == True</code>为真，但<code>2 == True</code>为假，最后执行<code>not False</code>结果为真，之后的反编译证明了这一点。</p>
+<h4><code>in</code>, <code>not in</code>与<code>and</code>, <code>or</code>, <code>not</code>的优先级</h4>
+<p>当逻辑运算表达式中加入成员运算符<code>in</code>, <code>not in</code>时，计算顺序会变成什么样呢？</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+  <span class="mi">1</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+             <span class="mi">12</span> <span class="n">COMPARE_OP</span>               <span class="mi">6</span> <span class="p">(</span><span class="ow">in</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="mi">1</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+              <span class="mi">6</span> <span class="n">COMPARE_OP</span>               <span class="mi">6</span> <span class="p">(</span><span class="ow">in</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+             <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p>这里需要注意的是当计算<code>0 or 1 in [2]</code>时，<code>JUMP_IF_TRUE_OR_POP</code>这一步为真时，直接跳转到了<code>RETURN_VALUE</code>而不会去执行<code>COMPARE_OP</code>，与之前<code>A or B and C</code>是不同的，不要思维惯性。
+由此可见，成员运算符<code>in</code>, <code>not in</code>和<code>and</code>, <code>or</code>, <code>not</code>平级，完全按照从左到右的顺序执行，若遇到<code>and</code>, <code>or</code>则在这基础上运用<code>短路</code>原则，读者可自行验证<code>not in</code>的情况。</p>
+<p>事实上，身份运算符<code>is</code>, <code>is not</code>也是同理，在执行过程中，身份运算符、成员运算符、逻辑运算符都是最低优先级。
+最后，回字的4种写法，如果你觉得<code>None and None is None</code>的值为<code>true</code>或<code>false</code>，那么你也许应该把上文再看一遍。</p>
+<h3>Reference</h3>
+<p>关于字节码和反汇编更多参见：
+<a href="https://opensource.com/article/18/4/introduction-python-bytecode">An introduction to Python bytecode</a>
+<a href="https://docs.python.org/3/library/dis.html">dis — Disassembler for Python bytecode</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/and-or-not/">posted at 22:37</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

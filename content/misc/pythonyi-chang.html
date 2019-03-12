@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | python异常</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python,exception" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">9月 01, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonyi-chang/" rel="bookmark" title="Permanent Link to &quot;python异常&quot;">python异常</a>
+                </h2>
+
+                
+                
+
+                <h4>如何捕获异常</h4>
+<p>在python中，我们通过<code>try..except..</code>语句来捕获异常，它的完全体如下：</p>
+<div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Execution statement</span>
+    <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">EOFError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;An EOF error occurred.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">e</span>
+<span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;An IO error occurred.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">e</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;exception&#39;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># 这里的代码只会在try语句里没有触发异常时运行,</span>
+    <span class="c1"># 但是这里的异常将 *不会* 被捕获</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;This would only run if no exception occurs. And an error here would NOT be caught.&#39;</span><span class="p">)</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="c1"># 无论是否发生异常，finally子句都将执行</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;This would be printed in every case.&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<h4>如何抛出异常</h4>
+<p>有的时候捕获异常后并不意味着操作的结束，形如下面的异常处理方式：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">256</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ValueError: byte must be in range(0, 256)&#39;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">foo</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">raise</span>   <span class="c1"># 注意这里会继续往上一层抛出错误</span>
+</pre></div>
+
+
+<p>如果没有继续往上一层抛出错误，那么出错时只会打印<code>'ValueError: byte must be in range(0, 256)'</code>而没有<code>tranceback</code>，使我们无法方便的追踪错误</p>
+<h4>Reference</h4>
+<p><a href="https://docs.python.org/3/library/exceptions.html#exception-hierarchy">exception-hierarchy</a>
+<a href="https://mozillazg.com/2016/08/python-the-right-way-to-catch-exception-then-reraise-another-exception.html">Python: 捕获异常然后再抛出另一个异常的正确姿势</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonyi-chang/">posted at 15:27</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/exception.html" class="tags">exception</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

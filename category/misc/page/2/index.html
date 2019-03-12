@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | articles in the "misc" category | Page 2</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+
+                <li class="ephemeral selected"><a href="/category/misc/page/2/index.html">misc</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">9月 16, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pipenvshi-yong-jin-jie/" rel="bookmark" title="Permanent Link to &quot;pipenv使用进阶&quot;">pipenv使用进阶</a>
+                </h2>
+
+                
+                
+
+                <h4>自定义虚拟环境的路径</h4>
+<p><code>pipenv</code>使用<code>pew</code>来管理虚拟环境的路径，我们可以自定义<code>WORKON_HOME</code>环境变量来设置虚拟环境的路径，或者使用<code>pipenv</code>内置的环境变量<code>PIPENV_VENV_IN_PROJECT</code>，将虚拟环境设置在每个项目的根目录下的<code>.venv</code>文件夹。</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">WORKON_HOME</span><span class="o">=</span>~/.venvs       <span class="c1"># default: ~/.virtualenvs/test-Shuk7a5m</span>
+<span class="c1"># or</span>
+<span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>   <span class="c1"># %project_root_path%/.venv</span>
+</pre></div>
+
+
+<p><code>bash</code>配置在<code>.bashrc</code>或<code>.bash_profile</code>中，<code>Zsh</code>配置在<code>.zshrc</code>，其它<code>Shell</code>以此类推，也可直接写入系统环境变量。</p>
+<h4>自动激活虚拟环境</h4>
+<p>配合<code>autoenv</code>或<code>virtualenv-autodetect</code>可实现自动激活环境，和设置<code>PIPENV_VENV_IN_PROJECT</code>环境变量可以自动激活虚拟环境。</p>
+<p>在.bashrc或.bash_profile中配置如下</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>
+<span class="nb">source</span> /path/to/virtualenv-autodetect.sh
+</pre></div>
+
+
+<p>如果使用了oh-my-zsh, 可以直接使用它的插件形式</p>
+<div class="highlight"><pre><span></span><span class="c1"># 安装插件</span>
+$ git@github.com:RobertDeRose/virtualenv-autodetect.git ~/.oh-my-zsh/custom/plugins
+</pre></div>
+
+
+<p>再修改.zshrc文件启动插件</p>
+<div class="highlight"><pre><span></span><span class="c1"># 找到启动plugins的行添加启用插件</span>
+<span class="nv">plugins</span><span class="o">=(</span>... virtualenv-autodetect<span class="o">)</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pipenvshi-yong-jin-jie/">posted at 17:03</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/technicalbasics.html" class="tags">technicalBasics</a>
+                </div>
+            </article>            <h4 class="date">9月 08, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling/" rel="bookmark" title="Permanent Link to &quot;数值转成N位字符串时如何保留前方无效的零&quot;">数值转成N位字符串时如何保留前方无效的零</a>
+                </h2>
+
+                
+                
+
+                <p>python中有一个容易忽略的陷阱，比方说你打算在一个大字符串中找一个数字，现在你有了一个函数（比如说<code>str.find()</code>），我们当然知道要传入一个数字字符串，但如果是纯数字呢，这个时候可能会理所当然的想到转义，比如<code>str(number)</code>，那么问题来了，如果你要找的数值前有零，直接转换的结果可能会出乎你的意料：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 需要注意的是数值前若有一个零，那么该数值会被认为是八进制数，导致结果不同</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>   <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 若数值前有两个或两个以上的零，则无效零将被舍去</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">0010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 以上结果为python2.x上运行所得，在python3.x上均会报错：SyntaxError: invalid token</span>
+<span class="c1"># 所以要想在python3.x上转换八进制数，需要写成如下格式</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+
+<span class="c1"># 而如果使用格式化字符串,无论是在python2.x还是python3.x上都会被认为是八进制数</span>
+<span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="mo">010</span>          <span class="c1"># &#39;8&#39;</span>
+<span class="s2">&quot;{:d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+</pre></div>
+
+
+<p>所以，依靠直接在数字前补零来转换是不可能的，不是被识别成八进制数，就是多余的零被舍去，所以正确的做法是在字符串下加入'0'</p>
+<div class="highlight"><pre><span></span><span class="c1"># str.zfill() and str.rjust</span>
+<span class="n">number_str</span> <span class="o">=</span> <span class="s1">&#39;123&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">zfill(...)</span>
+<span class="sd">    S.zfill(width) -&gt; string</span>
+
+<span class="sd">    Pad a numeric string S with zeros on the left, to fill a field</span>
+<span class="sd">    of the specified width.  The string S is never truncated.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">number_str</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">rjust(...)</span>
+<span class="sd">    S.rjust(width[, fillchar]) -&gt; string</span>
+
+<span class="sd">    Return S right-justified in a string of length width. Padding is</span>
+<span class="sd">    done using the specified fill character (default is a space)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">number_str</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+
+<span class="c1"># 以上方法都是直接在字符串前补零，若数值不是十进制则会出现问题</span>
+<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>       <span class="c1"># &#39;000x2000&#39;</span>
+<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>  <span class="c1"># &#39;000x2000&#39;</span>
+
+<span class="c1"># 所以转换十六进制或八进制或二进制数值我们使用格式化字符串</span>
+<span class="s2">&quot;{:08x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0x2000</span><span class="p">)</span>   <span class="c1"># &#39;00002000&#39;     (Memory usage: 32bits)</span>
+<span class="s2">&quot;{:08o}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>     <span class="c1"># &#39;00000010&#39;     (Memory usage: 24bits)</span>
+<span class="s2">&quot;{:08b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mb">0b1010</span><span class="p">)</span>   <span class="c1"># &#39;00001010&#39;     (Memory usage: 8bits)</span>
+<span class="c1"># 之后如有需要，在前面补上&#39;0x&#39;, &#39;0o&#39;, &#39;0b&#39;的前缀即可</span>
+<span class="c1"># &#39;%&#39;格式化除了不能格式化二进制以外同理</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling/">posted at 11:02</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                </div>
+            </article>            <h4 class="date">9月 04, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/han-shu-mo-ren-can-shu-wei-ke-bian-shu-ju-lei-xing-de-wen-ti/" rel="bookmark" title="Permanent Link to &quot;函数默认参数为可变数据类型的问题&quot;">函数默认参数为可变数据类型的问题</a>
+                </h2>
+
+                
+                
+
+                <h4>当函数拥有一个可变类型的默认参数..</h4>
+<p>众所周知，python中的数据类型分为可变(mutable)和不可变(immutable)两种类型，这里暗含一个巨大的坑就是当函数的默认参数为可变(mutable)类型时，函数的运行结果可能会出乎你的意料，让我们来看一个例子：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generateCommand</span><span class="p">(</span><span class="n">baseCommand</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="c1"># read config and generate command option</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;This is&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;command option&#39;</span><span class="p">]</span>
+    <span class="n">baseCommand</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baseCommand</span>
+
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;, &#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+</pre></div>
+
+
+<p>可以看出，默认参数只会运算一次，而不是每次被调用时都会重新运算，而<code>baseCommand</code>是一个可变类型，导致如果没有赋值，每次新的计算时都不会重新将其赋值为空列表.</p>
+<h4>怎样避免？</h4>
+<p>我们定义默认参数时应该尽量避免使用可变参数，比如像下面这样：（如果一定需要则需要写明注释，防止其他人调用接口出错）</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generateCommand</span><span class="p">(</span><span class="n">baseCommand</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">baseCommand</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>   <span class="c1"># Can be written as &#39;baseCommand == None&#39;, but use &#39;is&#39; faster.</span>
+        <span class="n">baseCommand</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># read config and generate command option</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;This is&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;command option&#39;</span><span class="p">]</span>
+    <span class="n">baseCommand</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baseCommand</span>
+
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+</pre></div>
+
+
+<p>值得注意的是，对于<code>None</code>来说，因为其有且仅有一个，所以可以使用<code>is None</code>代替<code>== None</code>，而事实上使用<code>is</code>速度更快，因为<code>is</code>是一个快速的<code>id</code>比较，而<code>==</code>需要调用内置函数<code>__eq__()</code>并查找被比较的值进行比较。</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/han-shu-mo-ren-can-shu-wei-ke-bian-shu-ju-lei-xing-de-wen-ti/">posted at 21:14</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                </div>
+            </article>            <h4 class="date">9月 01, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonyi-chang/" rel="bookmark" title="Permanent Link to &quot;python异常&quot;">python异常</a>
+                </h2>
+
+                
+                
+
+                <h4>如何捕获异常</h4>
+<p>在python中，我们通过<code>try..except..</code>语句来捕获异常，它的完全体如下：</p>
+<div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Execution statement</span>
+    <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">EOFError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;An EOF error occurred.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">e</span>
+<span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;An IO error occurred.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">e</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;exception&#39;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># 这里的代码只会在try语句里没有触发异常时运行,</span>
+    <span class="c1"># 但是这里的异常将 *不会* 被捕获</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;This would only run if no exception occurs. And an error here would NOT be caught.&#39;</span><span class="p">)</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="c1"># 无论是否发生异常，finally子句都将执行</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;This would be printed in every case.&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<h4>如何抛出异常</h4>
+<p>有的时候捕获异常后并不意味着操作的结束，形如下面的异常处理方式：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">256</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ValueError: byte must be in range(0, 256)&#39;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">foo</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">raise</span>   <span class="c1"># 注意这里会继续往上一层抛出错误</span>
+</pre></div>
+
+
+<p>如果没有继续往上一层抛出错误，那么出错时只会打印<code>'ValueError: byte must be in range(0, 256)'</code>而没有<code>tranceback</code>，使我们无法方便的追踪错误</p>
+<h4>Reference</h4>
+<p><a href="https://docs.python.org/3/library/exceptions.html#exception-hierarchy">exception-hierarchy</a>
+<a href="https://mozillazg.com/2016/08/python-the-right-way-to-catch-exception-then-reraise-another-exception.html">Python: 捕获异常然后再抛出另一个异常的正确姿势</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonyi-chang/">posted at 15:27</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/exception.html" class="tags">exception</a>
+                </div>
+            </article>            <h4 class="date">9月 01, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonzi-sheng/" rel="bookmark" title="Permanent Link to &quot;python自省&quot;">python自省</a>
+                </h2>
+
+                
+                
+
+                <p>事实上，自省这个概念并没有这么复杂，只要是能够返回对象状态、类型等数据的操作，都能称之为自省，比如内置的<code>__str__</code>和<code>__repr__</code>方法，对于字典的<code>has_key()</code>，检查对象是否有某个属性的<code>hasattr(obj, attr)</code>等，这里会列出几个常见的，希望在编程时可以注意到提供适当的自省方法。</p>
+<h4>dir</h4>
+<p>它是用于自省的最重要的函数之一。它返回列出了一个对象所拥有的属性和方法的列表。如果运行<code>dir()</code>而不传入参数，那么它会返回当前作用域的所有名字。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="nb">dir</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="p">[</span><span class="s1">&#39;__add__&#39;</span><span class="p">,</span> <span class="s1">&#39;__class__&#39;</span><span class="p">,</span> <span class="s1">&#39;__contains__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delattr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span> <span class="s1">&#39;__eq__&#39;</span><span class="p">,</span> <span class="s1">&#39;__format__&#39;</span><span class="p">,</span> <span class="s1">&#39;__ge__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getattribute__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__gt__&#39;</span><span class="p">,</span> <span class="s1">&#39;__hash__&#39;</span><span class="p">,</span> <span class="s1">&#39;__iadd__&#39;</span><span class="p">,</span> <span class="s1">&#39;__imul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">,</span> <span class="s1">&#39;__le__&#39;</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">,</span> <span class="s1">&#39;__lt__&#39;</span><span class="p">,</span> <span class="s1">&#39;__mul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__ne__&#39;</span><span class="p">,</span> <span class="s1">&#39;__new__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reduce__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reduce_ex__&#39;</span><span class="p">,</span> <span class="s1">&#39;__repr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reversed__&#39;</span><span class="p">,</span> <span class="s1">&#39;__rmul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setattr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__sizeof__&#39;</span><span class="p">,</span> <span class="s1">&#39;__str__&#39;</span><span class="p">,</span> <span class="s1">&#39;__subclasshook__&#39;</span><span class="p">,</span> <span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="s1">&#39;extend&#39;</span><span class="p">,</span> <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;insert&#39;</span><span class="p">,</span> <span class="s1">&#39;pop&#39;</span><span class="p">,</span> <span class="s1">&#39;remove&#39;</span><span class="p">,</span> <span class="s1">&#39;reverse&#39;</span><span class="p">,</span> <span class="s1">&#39;sort&#39;</span><span class="p">]</span>
+</pre></div>
+
+
+<h4>id</h4>
+<p>返回一个对象唯一ID</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">59914112L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">59914112L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="il">59739040L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">c</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">==</span> <span class="n">c</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<h4>type与instance</h4>
+<p><code>type</code>可以只接收一个参数，并打印其未知的所属的类型，而<code>isinstance</code>只能判断是否属于某个已知类型，所以,如果我们需要知道一个对象是什么类型，使用<code>isinstance</code>效率更高一些.</p>
+<p><code>isinstance</code>可以判断子类对象是否继承于父类；而<code>type</code>不可以，type只能把类对象识别为<code>instance</code>实例类型，因为老式类都是通过<code>instance</code>创建的，而新式类(New-Style Class)是从python2.2开始，继承自Object的class(eg. <code>class A(object)</code>)，而python2.x中如果没有继承自object，则为老式类，而在python3.x中不管有没有继承都是新式类，因为python3.x中只有新式类。</p>
+<p>总的来说，<code>type</code>主要用于获取未知变量的类型，<code>isinstance</code>主要用于判断A类是否继承于B类</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">A</span><span class="p">():</span>
+    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="k">pass</span>
+<span class="n">b</span><span class="o">=</span><span class="n">B</span><span class="p">()</span>
+
+<span class="c1">#isinstance判断对象b是不是B的实例</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">B</span><span class="p">))</span>
+<span class="c1">#isinstance判断对象b是不是A的实例</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">A</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">B</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">A</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">上述代码在python2.x中（老式类）的结果为：</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">False</span>
+<span class="sd">False</span>
+<span class="sd">上述代码在python3.x中（新式类）的结果为：</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">False</span>
+<span class="sd">可见判断对象类型（尤其是class对象），使用instance更好</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h4>inspect</h4>
+<p>详见<a href="https://docs.python.org/2/library/inspect.html">inspect — Inspect live objects</a></p>
+<h4>Reference</h4>
+<p><a href="https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes">New-style and classic classes</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonzi-sheng/">posted at 14:35</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">8月 26, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/byte-order-and-bom/" rel="bookmark" title="Permanent Link to &quot;Byte Order and BOM&quot;">Byte Order and BOM</a>
+                </h2>
+
+                
+                
+
+                <h4>定义</h4>
+<p>小端模式：低地址低位，高地址高位</p>
+<p>大端模式：低地址高位，高地址低位</p>
+<p>需要注意的是，比如有如下文件：
+<img alt="utf-8 file" src="./images/big-endian%20and%20little-endian_01.jpg">
+我们是无法通过上图的信息判断这个文件是小端序还是大端序的，因为判断必须基于两点：
+1. 有递进的地址
+2. 你知道一组数字的高位或低位（或者说算数领域的写法）</p>
+<p>所以只有告诉你第一个<code>Word</code>写作<code>(0x)36623562</code>，那么你才知道这是小端序,同理，如果它写作<code>(0x)62356226</code>，则为大端序。</p>
+<h4>常见字节序</h4>
+<p>一般而言， 小端模式常见于x86架构的系统，而大端模式常见于嵌入式设备以及通信协议中,计算机的内部处理，其他的场合几乎都是大端字节序，比如网络传输和文件储存</p>
+<h3>BOM(Byte Order Mark)</h3>
+<p>BOM可以用来表示文件编码方式以及字节顺序（Byte Order），具体如下：
+<em> 00 00 fe ff UTF-32, Big Endian
+</em> fe ff 00 00 UTF-32, Little Endian
+<em> fe ff ## ## UTF-16, Big Endian
+</em> ff fe ## ## UTF-16, Little Endian
+* ef bb bf UTF-8</p>
+<p>值得注意的是UTF-8不需要BOM，尽管Unicode标准允许在UTF-8中使用BOM。
+所以不含BOM的UTF-8才是标准形式，在UTF-8文件中放置BOM主要是微软的习惯（顺便提一下：把带有BOM的小端序UTF-16称作「Unicode」而又不详细说明，这也是微软的习惯）。
+BOM（byte order mark）是为UTF-16和UTF-32准备的，用于标记字节序（byte order）。微软在UTF-8中使用BOM是因为这样可以把UTF-8和ASCII等编码明确区分开，但这样的文件在 Windows 之外的操作系统里会带来问题。</p>
+<p>以下是utf-8 file with BOM，可以看出utf-8的BOM是无法确定字节顺序的
+<img alt="utf-8 file with BOM" src="./images/big-endian%20and%20little-endian_02.jpg"></p>
+<h4>Reference</h4>
+<p><a href="http://www.ruanyifeng.com/blog/2016/11/byte-order.html">理解字节序</a>
+<a href="https://atedev.wordpress.com/2007/09/19/bom-bom-bom/">BOM BOM BOM</a>
+<a href="https://blog.csdn.net/fhzaitian/article/details/51482716">UTF-8到底需不需要 BOM？</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/byte-order-and-bom/">posted at 21:28</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/technicalbasics.html" class="tags">technicalBasics</a>
+                </div>
+            </article>            <h4 class="date">7月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/yamlde-zhu-yi-dian/" rel="bookmark" title="Permanent Link to &quot;YAML的注意点&quot;">YAML的注意点</a>
+                </h2>
+
+                
+                
+
+                <p>表达数据序列的格式
+数据交换语言</p>
+<h4>YAML的适用领域</h4>
+<p>从本质上来说，配置不同只是我们对于数据表达方式的不同。我们常用于配置的标准大概有<code>JSON</code>, <code>YAML</code>, <code>TOML</code>, <code>XML</code>这几种，或许还有<code>ini</code>格式的文件，但严格意义上来说并没有<code>INI</code>这样的标准。如果只是简单保存设置，直接储存在<code>.py</code>文件里也是可以的，但有时我们需要考虑到可读性和不同程序进行交互时的情况，
+从语法上来说，<code>YAML</code>无疑是简洁而优雅的，但是所有的简洁基本上都不可避免的伴随着信息量的缺失，对于特殊的语法，这部分缺失就需要从其它渠道弥补，比如<a href="https://yaml.org/">帮助手册</a>，这也是手册如此详尽的原因。
+首先来说<code>JSON</code>，<code>YAML</code>相对于它大概有很多优点，但难以取代，泛用性是一点，在<code>JSON</code>中，通过<code>{}</code>来表示值的起始和结束，这一般被视作缺点，但是，在网络传输中，<code>JSON</code>可以删除所有的空白（空格和回车符、换行符、换页符、制表符、垂直制表符即<code>\r\n\f\t\v</code>）而不影响其解析，但<code>YAML</code>显然不行，而现在基本都是软<code>Tab</code>，这就意味着在网络传输时需要传输更多的信息量。另外，不是所有<code>JSON</code>解析器都支持注释，原因上面已经说过了。
+而在前四种标准中，<code>XML</code>作为一种标记语言应该是最特殊的，因为其本质上并不为储存配置而设置，所以与其它标准相比我们大概会觉得配置文件非常臃肿，但是它也是唯一一种可以对元素<code>Element</code>设置属性<code>Attribute</code>的标准，利用这些自定义属性，比如<code>id</code>，我们不必知道上层结构就可以获得配置的值，就实现来说，像<code>lxml</code>这样的库实际上都实现了一种<code>ORM(Object Relational Mapping)</code>，而不是像其它用于表达数据序列的标准那样只有<code>parse</code>与<code>dump</code>。</p>
+<h5>是否要支持运算逻辑？</h5>
+<p><code>to be or not to be, that's a question</code>，配置文件中是否应该支持逻辑运算呢？作为要被解析的文件，自然是运算逻辑越少越好，毕竟在配置中做运算的开销会减慢<code>parse</code>的速度。但<code>YAML</code>使用中有个痛点是假如设置中需要引用到大量本地文件，如果打算对本地文件使用相对地址，那么显然必须设置其参照的根目录，而这个根目录显然应该是绝对地址，虽然<code>YAML</code>中提供了锚定(anchors)的功能，但是因为没有字符串拼接或是计算<code>path</code>的功能，所以只能在<code>code</code>里初始化的时候完成，不然只能把设置全部写成绝对地址，而每项设置前面相同的路径可能会很长，当然，换个角度来说也可以说是整体构思的问题，避免这个问题，只设置一个根目录，其它全部在<code>code</code>里面完成，这样可能有更好的<code>log</code>和兼容。好吧，不要钻牛角尖了，这也是<code>YAML</code>和<code>TOML</code>本质上的区别，因为没有用过<code>TOML</code>，我只能说具体问题具体分析。</p>
+<h4>YAML中None的表示</h4>
+<p><a href="http://yaml.org/type/null.html">Null Language-Independent Type for YAML™ Version 1.1 </a></p>
+<p>Shorthand:!!null</p>
+<p>Canonical:~</p>
+<p>Regexp:
+ ~ # (canonical)
+|null|Null|NULL # (English)
+| # (Empty)</p>
+<p>Definition:
+Devoid of value.
+A null value is used to indicate the lack of a value. This is typically converted into any native null-like value (e.g., undef in Perl, None in Python). Note that a null is different from an empty string and that a mapping entry with some key and a null value is valid and different from not having that key in the mapping.</p>
+<h4>YAML中object的表示</h4>
+<p>如何在<code>yaml</code>中表示一个自定义的<code>python/object</code>？假设有以下目录：</p>
+<div class="highlight"><pre><span></span>$ tree
+<span class="p">|</span>-- module
+<span class="p">|</span>   <span class="p">|</span>-- mymodule.py
+<span class="p">|</span>-- project.py
+<span class="p">|</span>-- yaml
+    <span class="p">|</span>-- config.yaml
+</pre></div>
+
+
+<p>那么假如在<code>project.py</code>中打开<code>yaml</code>文件，需要在<code>yaml</code>中表示<code>mymodule,py</code>下名为<code>stuInfo</code>的<code>class</code>，那么应该在<code>yaml</code>中这样写：</p>
+<div class="highlight"><pre><span></span><span class="kt">!!python/object:module.mymodule.stuInfo</span>     <span class="c1"># 注意这里的路径，取决于打开配置文件的文件的目录，这里即`project.py`</span>
+<span class="nt">name</span><span class="p">:</span> <span class="s">&#39;Andy&#39;</span>
+<span class="nt">age</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">18</span>
+</pre></div>
+
+
+<h4>Reference</h4>
+<p>关于<code>YAML</code>语法可见官网或<a href="https://learnxinyminutes.com/docs/yaml/">Learn yaml in Y Minutes</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/yamlde-zhu-yi-dian/">posted at 20:05</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/yaml.html" class="tags">yaml</a>
+                </div>
+            </article>
+
+                <div class="clear"></div>
+                <div class="pages">
+                        <a href="/" class="prev_page">&larr;&nbsp;Previous</a>                        <a href="/page/3" class="next_page">Next&nbsp;&rarr;</a>
+                    <span>Page 2 of 3</span>
+                </div>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

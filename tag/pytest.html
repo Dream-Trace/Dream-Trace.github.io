@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | articles tagged "pytest"</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li class="ephemeral selected"><a href="/tag/pytest.html">pytest</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">7月 06, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pytestcan-shu-hua-shun-xu-de-wen-ti/" rel="bookmark" title="Permanent Link to &quot;pytest参数化顺序的问题&quot;">pytest参数化顺序的问题</a>
+                </h2>
+
+                
+                
+
+                <h4>pytest参数化顺序的问题</h4>
+<p>假设现在我们有个函数需要赋值<code>x</code>、<code>y</code>，然后每次输出<code>(x, y)</code>，利用<code>parametrize</code>，我们可能会这样写。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pytest</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">((</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="k">def</span> <span class="nf">test_foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</pre></div>
+
+
+<p>虽然这样定义输出顺序一目了然，但仔细想想，其中<code>x</code>、<code>y</code>都有重复的值，如果有三项、四项或是更多的参数和值，光编写代码都需要很长的时间，而且我们需要手动将其全排列，还可能会漏掉某项。事实上，当要获得多个参数化参数的所有组合，我们可以堆栈<code>parametrize</code>装饰器，但是要注意定义<code>parametrize</code>装饰器的先后不同在具体执行上会有细微差别，造成输出的顺序会有所不同。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pytest</span>
+<span class="c1"># No.1 Define x first and then define y</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">test_foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;output:</span>
+<span class="sd">PS E:\python\pytest&gt; pytest -v -s</span>
+<span class="sd">============================= test session starts =============================</span>
+<span class="sd">platform win32 -- Python 2.7.13, pytest-3.4.0, py-1.5.2, pluggy-0.6.0 -- c:\python27\python.exe</span>
+<span class="sd">cachedir: .pytest_cache</span>
+<span class="sd">rootdir: E:\python\pytest, inifile:</span>
+<span class="sd">collected 6 items</span>
+
+<span class="sd">test_ mark_parametrize.py::test_foo[7-0] (0, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[7-1] (1, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[8-0] (0, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[8-1] (1, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[9-0] (0, 9)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[9-1] (1, 9)</span>
+<span class="sd">PASSED</span>
+
+<span class="sd">========================== 6 passed in 0.02 seconds ===========================</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># No.2 Define y first and then define x</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">test_foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;output:</span>
+<span class="sd">PS E:\python\pytest&gt; pytest -v -s</span>
+<span class="sd">============================= test session starts =============================</span>
+<span class="sd">platform win32 -- Python 2.7.13, pytest-3.4.0, py-1.5.2, pluggy-0.6.0 -- c:\python27\python.exe</span>
+<span class="sd">cachedir: .pytest_cache</span>
+<span class="sd">rootdir: E:\python\pytest, inifile:</span>
+<span class="sd">collected 6 items</span>
+
+<span class="sd">test_ mark_parametrize.py::test_foo[0-7] (0, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[0-8] (0, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[0-9] (0, 9)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[1-7] (1, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[1-8] (1, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[1-9] (1, 9)</span>
+<span class="sd">PASSED</span>
+
+<span class="sd">========================== 6 passed in 0.03 seconds ===========================</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>上面的两种方法，只有第二种输出的顺序与一开始相同。观察上面两种方法输出内容的不同，我们可理解为：
+先定义<code>x=[0, 1]</code>后定义<code>y=[7, 8, 9]</code>时可看作共执行<code>len(y)</code>次（即3次），每次执行都会遍历<code>x</code>，相当于如下语句:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">y_value</span> <span class="ow">in</span> <span class="n">y</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">x_value</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+        <span class="c1"># do someing, such as</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">x_value</span><span class="p">,</span> <span class="n">y_value</span><span class="p">)</span>
+</pre></div>
+
+
+<p>先定义<code>y=[7, 8, 9]</code>后定义<code>x=[0, 1]</code>时可看作共执行<code>len(x)</code>次（即2次），每次执行都会遍历<code>y</code>，相当于如下语句:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">x_value</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">y_value</span> <span class="ow">in</span> <span class="n">y</span><span class="p">:</span>
+        <span class="c1"># do someing, such as</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">x_value</span><span class="p">,</span> <span class="n">y_value</span><span class="p">)</span>
+</pre></div>
+
+
+<p>所以说参数化过程是一种先进后出的堆栈，但对于顺序有要求时需要注意这一点。</p>
+<h4>Reference</h4>
+<p><a href="https://docs.pytest.org/en/latest/parametrize.html#pytest-mark-parametrize">Parametrizing fixtures and test functions</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pytestcan-shu-hua-shun-xu-de-wen-ti/">posted at 21:58</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/pytest.html" class="tags selected">pytest</a>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

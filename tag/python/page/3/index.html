@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | articles tagged "python" | Page 3</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li class="ephemeral selected"><a href="/tag/python/page/3/index.html">python</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">4月 11, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonman-tan-enumeratehe-die-dai/" rel="bookmark" title="Permanent Link to &quot;python漫谈：enumerate和迭代&quot;">python漫谈：enumerate和迭代</a>
+                </h2>
+
+                
+                
+
+                <h4>首先从遍历列表说起...</h4>
+<p>假设我们需要在python中打印一个列表的值，如果是一个有C/java背景的初学者，那么他可能会这么写：</p>
+<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seasonList</span><span class="p">)):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">seasonList</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</pre></div>
+
+
+<p>非常质朴的做法，但是问题在于：<strong>python中的<code>for</code>并不是用于循环的，它的主要用途是迭代或者说遍历，至于循环，那是<code>while</code>的工作。</strong>，这一点与C/java中用于循环的<code>for</code>和<code>while</code>不同，所以python中其实并不需要计数次数<code>i</code>，我们只需要简单的使用<code>for...in...</code>结构即可，由于<code>seasonList</code>对象本身是一个可迭代对象<sup id="fnref:1"><a class="footnote-ref" href="#fn:1" rel="footnote">1</a></sup>，Python处理<code>for</code>循环时，首先会调用内建函数<code>iter(seasonList)</code>，实际上会调用<code>seasonList.__iter__()</code>，返回其对应的迭代器。而后，<code>for</code>循环会调用内建函数<code>next()</code>，作用在迭代器上，获取迭代器的下一个元素，并赋值给<code>season</code>。此后，Python才开始执行循环体。</p>
+<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">seasonList</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">season</span><span class="p">)</span>
+</pre></div>
+
+
+<p>那么，我们如何同时获得索引和值呢？按照上面两种思路，我们可能会有两种写法：</p>
+<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
+<span class="c1"># No.1 Iterate through the index</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seasonList</span><span class="p">)):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">seasonList</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+<span class="c1"># No.2 Iterate through the value</span>
+<span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">seasonList</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">seasonList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">season</span><span class="p">),</span> <span class="n">season</span><span class="p">)</span>
+</pre></div>
+
+
+<p>由于方法二需要<code>index()</code>方法来返回索引，所以方法一的效率会远远大于方法二，并且随着<code>seasonList</code>长度的增加而增加，但是方法一也并非完美，期间生成了一个用于计数的列表而并非数值，如果<code>seasonList</code>的长度很长，那么这个数组会占用大量不必要的内存<sup id="fnref:2"><a class="footnote-ref" href="#fn:2" rel="footnote">2</a></sup>。那么，这是否意味着直接对其迭代不如求出索引之后迭代索引呢，如果两者函数体内都不做任何操作(<code>pass</code>)，虽然两者都是都迭代，但由于方法一多了求长度以及生成计数列表这一操作，方法二的效率会大于方法一（只有当list长度为个位数时，在一定几率下，方法一的<strong>耗时</strong>可能会小于方法二）</p>
+<h4>使用enumerate()</h4>
+<p>由上所述，为了优雅的获得索引和值，我们需要使用enumerate()函数，该函数将会返回一个枚举（enumerate）对象，它是可迭代的，每次返回一个元组，关于迭代的更多内容，可参见###迭代器和生成器###</p>
+<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
+<span class="c1"># No.3 Iterate through the enumerate()</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">season</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seasonList</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">season</span><span class="p">)</span>
+</pre></div>
+
+
+<blockquote>
+<p>output:
+(0, 'Spring')
+(1, 'Summer')
+(2, 'Fall')
+(3, 'Winter')</p>
+</blockquote>
+<p>可以看到每次返回的元组都会经过<code>for...in...</code>解包，从而给变量<code>i</code>、<code>season</code>赋值，关于解包嵌套数据结构，请参见<a href="https://dbader.org/blog/python-nested-unpacking">Unpacking Nested Data Structures in Python</a></p>
+<p>另外，enumerate()函数还允许我们自定义起始索引值。接受一个可选参数，该参数允许你为本次循环中的计数器变量设置初始值：</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">season</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seasonList</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">season</span><span class="p">)</span>
+</pre></div>
+
+
+<blockquote>
+<p>output:
+(1, 'Spring')
+(2, 'Summer')
+(3, 'Fall')
+(4, 'Winter')</p>
+</blockquote>
+<h4>效率对比</h4>
+<p><code>seasonList[i]</code>与<code>enumerate()</code>的效率比较，使用python2.7在win10下的结果，总的来说，在列表长度较小时（0～100），第一种方法占优，当列表较大，第二种方法占优。但是令人困惑的是列表长度（1000～2000）时，第一种方法似乎又重新占优了，以下是测试代码</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="n">testList</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">output1</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">output2</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">length</span> <span class="o">=</span> <span class="mi">80</span>
+<span class="n">exec_times</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;list length = </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">length</span><span class="p">)</span>
+
+<span class="k">while</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+    <span class="n">testList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100000</span><span class="p">))</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">time_analyze</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">clock</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">exec_times</span><span class="p">):</span>
+        <span class="n">func</span><span class="p">()</span>
+    <span class="n">finish</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s2">&quot;{:&lt;20}{:10.10} s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">finish</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+<span class="c1"># No.1</span>
+<span class="k">def</span> <span class="nf">searchByIndex</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">testList</span><span class="p">)):</span>
+        <span class="n">output1</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span><span class="n">testList</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+<span class="c1"># No.2</span>
+<span class="k">def</span> <span class="nf">searchByEnum</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">testList</span><span class="p">):</span>
+        <span class="n">output2</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span><span class="n">value</span><span class="p">))</span>
+
+<span class="n">time_analyze</span><span class="p">(</span><span class="n">searchByIndex</span><span class="p">)</span>
+<span class="n">time_analyze</span><span class="p">(</span><span class="n">searchByEnum</span><span class="p">)</span>
+</pre></div>
+
+
+<h4>实现一个enumerate函数</h4>
+<p>实现一个迭代器必须要有<code>__iter__()</code>方法和<code>next()</code>方法（在python3.x中为<code>__next__()</code>方法）。下面实现的方法是将迭代对象和迭代器合并在一起的形式，故生成的迭代器无法多次使用，还有将两者分开的形式，详见###迭代器和生成器###</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">myEnumerate</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">index</span><span class="p">,</span> <span class="n">item</span>
+</pre></div>
+
+
+<p>上面的代码实现的迭代器有点繁琐，我们可以使用<code>yield</code>关键词来实现一个生成器，一个可迭代的并且简洁的简洁的方案，使用next()方法会依次返回元素，并且越界时报StopIteration异常。</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myEnumerate</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="n">it</span> <span class="o">=</span> <span class="n">myEnumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># (0, 0)</span>
+<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># (1, 1)</span>
+<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># (2, 2)</span>
+<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># StopIteration</span>
+</pre></div>
+
+
+<p>Python 中的顺序类型，都是可迭代的（<code>list</code>, <code>tuple</code>, <code>string</code>）。其余包括 <code>dict</code>, <code>set</code>, <code>file</code> 也是可迭代的。对于用户自己实现的类型，如果提供了 <code>__iter__()</code> 或者 <code>__getitem__()</code> 方法，那么该类的对象也是可迭代的。</p>
+<h4>Reference</h4>
+<p><a href="https://docs.python.org/2/library/functions.html#enumerate">Official Built-in Functions Reference</a>
+<a href="https://dbader.org/blog/python-enumerate">Python’s enumerate() Function Demystified</a>
+<a href="http://www.cnblogs.com/xianwang/p/4907890.html">iter, yield与enumerate的实现</a></p>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:1">
+<p>关于可迭代对象：Python中的顺序类型，都是可迭代的（<code>list</code>、<code>tuple</code>、<code>string</code>），其余包括<code>dict</code>、<code>set</code>、<code>file</code>也是可迭代的。对于用户自己实现的类型，如果提供了<code>__iter__()</code>或者<code>__getitem__()</code>方法，那么该类的对象也是可迭代的。&#160;<a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>为了解决上述问题，在python2.x中提供了另外一个函数<code>xrange()</code>，这个函数和<code>range()</code>非常相似，它返回一个生成器，由于惰性计算的原因，即生成器表达式只有在被检索时候，才会被赋值，所以其占用内存比<code>range()</code>会小很多，而在Python3中，<code>range</code>相当于Python2中的<code>xrange</code>；而Python2中的<code>range</code>可以用<code>list(range())</code>来实现。&#160;<a class="footnote-backref" href="#fnref:2" rev="footnote" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonman-tan-enumeratehe-die-dai/">posted at 20:05</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags selected">python</a>
+                    &nbsp;<a href="/tag/iterator.html" class="tags">iterator</a>
+                </div>
+            </article>            <h4 class="date">2月 04, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/pythonzhong-de-yi-xie-zhu-yi-dian/" rel="bookmark" title="Permanent Link to &quot;python中的一些注意点&quot;">python中的一些注意点</a>
+                </h2>
+
+                
+                
+
+                <ul>
+<li>在Pyhon 2.x版本里，<code>open()</code>不支持显示地指定编码。然而，<code>io.open()</code>函数在Python 2.x中和3.x(其中它是<code>open()</code>的别名)中都有提供，它能做正确的事。你可以传入<code>encoding</code>这个关键字参数来传入编码。</li>
+<li>对于例如<code>%env%/target_file</code>这样的环境变量，要使用<code>os.path.expandvars(path)</code>而不是<code>os.path.abspath(path)</code></li>
+<li>在python2.7中如果要生成如下二进制文件：
+  <img alt="二进制文件" src="images/python中的一些注意点01.jpg">
+  不能使用:
+  <code>python
+  with open('test.bin', 'wb') as f:
+      f.write(b'FFEEDDCCBBAA00998877665544332211')</code>
+  这样生成的文件为：
+  <img alt="二进制文件" src="images/python中的一些注意点02.jpg">
+  应该写成类似<code>\xFF</code>的形式：
+  <code>python
+  # 'w'与`wb`没有什么差别
+  with open('test.bin', 'w') as f:
+      f.write  ('\xFF\xEE\xDD\xCC\xBB\xAA\x00\x99\x88\x77\x66\x55\x44\x33\x22\x11')</code></li>
+<li><code>os.path.join()</code>拼接会从第一个以”/”开头的参数开始拼接，之前的参数全部丢弃。
+  ```python
+  os.path.join(os.path.abspath('E:\test'), 'demo.txt')      # 'E:\test\demo.txt'
+  # 若第二参数前加了'\'
+  os.path.join(os.path.abspath('E:\test'), '\demo.txt')     # 'E:\demo.txt'</li>
+<li>在<code>python3</code>中所有<code>int</code>都为<code>long</code>，但是<code>python2</code>中分为<code>int</code>和<code>long</code>，所以在<code>python2</code>中使用<code>isinstance</code>时务必要注意不要漏了<code>long</code>的情况
+  ```</li>
+<li>要对<code>byte</code>或是<code>half-word</code>取反，使用<code>byte ^ 0xff</code>的形式而不是<code>~</code>，因为<code>~</code>是对于<code>int</code>(32/64 bits)取反</li>
+</ul>
+<h2>UnboundLocalError</h2>
+<p>我们知道，python的作用域遵循<code>LEGB</code>原则的，所以下面的代码是可以正常执行的：</p>
+<div class="highlight"><pre><span></span><span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;global&#39;</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="k">print</span> <span class="n">var</span>
+</pre></div>
+
+
+<p>但是如果在<code>foo()</code>内定义一个<code>local</code>的<code>var</code>变量，则会报错：</p>
+<div class="highlight"><pre><span></span><span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;global&#39;</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="k">print</span> <span class="n">var</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;local&#39;</span>
+<span class="c1"># UnboundLocalError: local variable &#39;var&#39; referenced before assignment</span>
+</pre></div>
+
+
+<p>可见，Python在确定变量引用的对象时，是在整块作用域扫描完毕后才确定的，而不是在逐行执行的时候</p>
+<h2>关于os.path的一些问题</h2>
+<ul>
+<li><code>os.path.abspath</code>: 返回绝对地址</li>
+<li><code>os.path.relpath</code>: 返回相对地址，这里的<code>相对</code>指的是<strong>相对于运行py文件的路径</strong></li>
+<li><code>os.path.expandvars</code>: 把路径中诸如<code>$name</code>, <code>${name}</code>, <code>%name%</code>环境变量替换成相应的值，<code>Linux</code>中支持前两种，<code>windows</code>中三种都支持</li>
+<li><code>os.path.expanduser</code>: 把path中包含的"~"和"~user"转换成用户目录</li>
+</ul>
+<h2>关于subprocess使用过程中的一些问题</h2>
+<p>工作中使用<code>subprocess</code>库时遇到一个问题，简要描述一下，工作目录大致如下：</p>
+<div class="highlight"><pre><span></span>|--python
+|  |--A.py
+|--tool
+|  |--dependence
+|    |--C.bin
+|  |--B.exe
+|  |--D.json
+</pre></div>
+
+
+<p>若python文件<code>A</code>执行目录与被调用程序<code>B</code>处于不同目录，被调用程序调用文件<code>C</code>时的路径设置有问题(没有计算当前绝对地址或相对地址，而是使用固定的字符串来表示地址)导致找不到文件<code>C</code>，那么，在不能修改被调用程序的情况下，加入<code>cwd</code>参数可以解决此问题：</p>
+<div class="highlight"><pre><span></span><span class="n">args</span> <span class="o">=</span> <span class="s1">&#39;called_program_path arg1 arg2 ..&#39;</span>
+<span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">called_program_dir</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+</pre></div>
+
+
+<p>此时，<code>called_program_path</code>必须在<code>A</code>中进行计算，绝对地址<code>abspath</code>或相对地址<code>relpath</code>均可，而在参数中比如<code>arg1</code>中的文件<code>D</code>可以直接写文件名或者绝对地址，不能写相对路径，因为相对路径是<code>D</code>相对于<code>A</code>的地址，而此时<code>cwd</code>的值是调用程序<code>B</code>的目录，即对于调用程序<code>B</code>来说，执行的地址就是<code>B</code>的目录，而不是<code>A</code>的目录，参照点是不同的。</p>
+<h2>关于open的模式的问题</h2>
+<p>r  打开只读文件，该文件必须存在。
+r+  打开可读写的文件，该文件必须存在，可覆写（<code>seek()</code>有效）。
+w  打开只写文件，若文件存在则文件长度清为0，即该文件内容会消失。若文件不存在则建立该文件，可覆写（<code>seek()</code>有效）。
+w+  打开可读写文件，若文件存在则文件长度清为零，即该文件内容会消失。若文件不存在则建立该文件，可覆写（<code>seek()</code>有效）。
+a  以附加的方式打开只写文件。若文件不存在，则会建立该文件，如果文件存在，写入的数据会被加到文件尾（<code>seek()</code>无效），即文件原先的内容会被保留。
+a+  以附加方式打开可读写的文件。若文件不存在，则会建立该文件，如果文件存在，写入的数据会被加到文件尾（<code>seek()</code>无效），即文件原先的内容会被保留。
+wb 在windows下，以二进制进行存储，\r\n才是换行
+w 是以文本方式进行存储\n是换行
+rb 取出来的也是\r\n
+r 取出来的是\n</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/pythonzhong-de-yi-xie-zhu-yi-dian/">posted at 15:19</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags selected">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                </div>
+            </article>            <h4 class="date">2月 03, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/misc/shu-ju-lei-xing-zhuan-huan/" rel="bookmark" title="Permanent Link to &quot;数据类型转换&quot;">数据类型转换</a>
+                </h2>
+
+                
+                
+
+                <h3>前言</h3>
+<p>本文试图从计算机内存中数据的储存形式来说明数据转换时的一些问题，所以，在<code>python</code>中诸如十进制数转成十六进制数这样的转换并不能称之为转换，因为在内存中它们的储存形式相同，只是打印(print)时将其转换成人类可读的字符串<code>String</code>的表达形式不同。</p>
+<h3>整数 &lt;-&gt; 字符串（字符转换）</h3>
+<p>准确的说是整数与表达其相应整数的字符串之间的相互转换，请看下列示例：</p>
+<h4>字符串转整数</h4>
+<div class="highlight"><pre><span></span><span class="c1"># Hex str to int</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s1">&#39;0x4d&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">hex_str</span><span class="p">,</span><span class="mi">16</span><span class="p">)</span>   <span class="c1"># 77</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s1">&#39;4d&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">hex_str</span><span class="p">,</span><span class="mi">16</span><span class="p">)</span>   <span class="c1"># 77</span>
+
+<span class="c1"># Ord str to int</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s1">&#39;115&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">ord_str</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>    <span class="c1"># 77</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s1">&#39;0115&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">ord_str</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>    <span class="c1"># 77</span>
+
+<span class="c1"># Binary str to int</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s1">&#39;01001101&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">bin_str</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># 77</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s1">&#39;0x01001101&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">bin_str</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># ValueError: invalid literal for int() with base 2: &#39;0x01001101&#39;</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s1">&#39;0b01001101&#39;</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">bin_str</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># 77</span>
+</pre></div>
+
+
+<h4>任意进制数转任意字符串</h4>
+<p>通常来说，使用格式化将整数转为字符串是一种通用方法，但<code>python</code>中也提供了其它专用方法来做这件事情。</p>
+<div class="highlight"><pre><span></span><span class="c1"># 任意进制数zhuan转十进制字符串</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>    <span class="c1"># &#39;77&#39;</span>
+<span class="nb">str</span><span class="p">(</span><span class="mh">0x4d</span><span class="p">)</span>  <span class="c1"># &#39;77&#39;</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">4</span><span class="n">d</span><span class="p">)</span>    <span class="c1"># SyntaxError: invalid syntax</span>
+<span class="c1"># 需要注意的是数值前若有一个零，那么该数值会被认为是八进制数，导致结果不同</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>   <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 若数值前有两个或两个以上的零，则无效零将被舍去</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">0010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 以上结果为python2.x上运行所得，在python3.x上均会报错：SyntaxError: invalid token</span>
+<span class="c1"># 所以要想在python3.x上转换八进制数，需要写成如下格式</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+
+<span class="c1"># 十进制数字转十六进制字符串</span>
+<span class="nb">hex</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>   <span class="c1"># &#39;0x4d&#39;</span>
+<span class="c1"># 十进制数字转八进制字符串</span>
+<span class="nb">oct</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>   <span class="c1"># &#39;0115&#39;</span>
+<span class="c1"># 十进制数字转二进制字符串</span>
+<span class="nb">bin</span><span class="p">(</span><span class="mi">77</span><span class="p">)</span>   <span class="c1"># &#39;0b1001101&#39;</span>
+
+<span class="c1"># 字符串格式化方法</span>
+<span class="n">number</span> <span class="o">=</span> <span class="mi">77</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>    <span class="c1"># &#39;4d&#39;</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%#x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>   <span class="c1"># &#39;0x4d&#39;</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%o</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>    <span class="c1"># &#39;115&#39;</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%#o</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>   <span class="c1"># &#39;0115&#39;</span>
+<span class="c1"># 值得注意的是需要保留数字前无效的0时可以这么做，详细见</span>
+<span class="c1"># 加入&#39;0&#39;，保留5位数字，若&#39;5&#39;的前面没有&#39;0&#39;，即&quot;%5d&quot;，则使用空格填充，总位数仍然占据5格</span>
+<span class="n">int_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%05d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>    <span class="c1"># &#39;00077&#39;</span>
+<span class="c1"># 若是要保持数字为8位，&#39;0&#39; 后面则加上数字&#39;8&#39;</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%08x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>   <span class="c1"># &#39;0000004d&#39;</span>
+<span class="c1"># 若同时加入&#39;#&#39;，&#39;#&#39;要在&#39;0&#39;之前，但这时不会出现&#39;0x0000004d&#39;这样的结果，所以说&#39;8&#39;代表总位数，此时&#39;0x&#39;也会算入总位数内</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%#08x</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>  <span class="c1"># &#39;0x00004d&#39;</span>
+
+<span class="c1"># python 2.6 新增字符串格式化方法同理</span>
+<span class="n">hex_str</span> <span class="o">=</span> <span class="s2">&quot;{:#010x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>   <span class="c1"># &#39;0x0000004d&#39;</span>
+<span class="c1"># 除了转成八进制时加入&#39;#&#39;和以往不同</span>
+<span class="n">ord_str</span> <span class="o">=</span> <span class="s2">&quot;{:#o}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>      <span class="c1"># &#39;0o115&#39;</span>
+<span class="c1"># 新增了二进制的转换</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s2">&quot;{:b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>       <span class="c1"># &#39;1001101&#39;</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s2">&quot;{:#b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>      <span class="c1"># &#39;0b1001101&#39;</span>
+<span class="n">bin_str</span> <span class="o">=</span> <span class="s2">&quot;{:#010b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>   <span class="c1"># &#39;0b01001101&#39;</span>
+</pre></div>
+
+
+<h4>ascii/unicode码值和字符相互转换</h4>
+<p>这看起来有点像是整数和字符串的转换，但其实是字符(Character)与整数(struct)的转换，其依赖于一种映射关系。</p>
+<div class="highlight"><pre><span></span><span class="c1"># char to ascii/unicode</span>
+<span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>   <span class="c1"># 97</span>
+<span class="nb">ord</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>  <span class="c1"># 97</span>
+
+<span class="c1"># ascii/unicode to char</span>
+<span class="nb">chr</span><span class="p">(</span><span class="mi">97</span><span class="p">)</span>    <span class="c1"># &#39;a&#39;</span>
+<span class="nb">unichr</span><span class="p">(</span><span class="mi">97</span><span class="p">)</span> <span class="c1"># u&#39;a&#39;</span>
+<span class="c1"># 格式化也可使char转换成ascii码值</span>
+<span class="s2">&quot;</span><span class="si">%c</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="mi">97</span>  <span class="c1"># &#39;a&#39;</span>
+</pre></div>
+
+
+<p>是不是有点懵了？在了解字符(Character)和字符流(Character Streams)之前，我们要先了解字节流(bytestream)</p>
+<h3>字节流(bytestream) &lt;-&gt; 整数（struct）</h3>
+<p>在这里又引入了一个新概念：字节流，什么是字节流？</p>
+<blockquote>
+<p>A bytestream is a sequence of bytes. Typically, each byte is a 8-bit quantity (octets), and so the term octet stream is sometimes used interchangeably. An octet may be encoded as a sequence of 8 bits in multiple different ways (see endianness) so there is no unique and direct translation between bytestreams and bitstreams.</p>
+</blockquote>
+<p>翻译一下就是字节流是一个字节序列。通常，每个字节是8位bit，因此术语八位字节流有时可互换使用。八位字节可以以多种不同方式编码为8位序列（参见字节序），因此在字节流和比特流之间不存在唯一且直接的转换。
+读了上面这段话，可能会产生新的疑问：什么是比特流？</p>
+<blockquote>
+<p>A bitstream (or bit stream), also known as binary sequence, is a sequence of bits. </p>
+</blockquote>
+<p>比特流(bitstream)，也称为二进制序列，是比特序列。</p>
+<p>总结一下，字节流(bytestream)就是八位比特流(bitstream)，可以表示为<code>b'\x31\x32\x61\x62'</code>，但如果是比特流，就只能写成这样<code>'00110001001100100110000101100010'</code>，而不是<code>'\b00110001\b00110010\b01100001\b01100010'</code>，换句话来说，如果给你一个比特流，你是不知道几个bit是一个单位的，这就是为什么串口通信时我们要设置数据位、校验位、停止位的原因，如果是1位起始位+8位数据位+1位终止位，那就是10位，如果波特率都为9600(baud/s)，根据公式：<code>比特率(bit/s)=波特率(baud/s) * 单个调制状态对应的二进制位数</code>，现在每个baud是10bit，那么比特率就为<code>9600(baud/s) * 10 = 96000(bit/s)</code>，而如果还有1位校验位，那么比特率就为<code>9600(baud/s) * 11 = 105600(bit/s)</code>，所以，从通信角度来说，虽然两者的信息量一致(8位数据位)，但传送的数据量显然后者更多。</p>
+<p>最后，比特流更多的见于传输协议，而字节流更多的见于文件I/O，因为python解析文件是按照字节来解析的，所以这里我们讨论的是字节流(bytestream)</p>
+<h4>字节流转整数</h4>
+<p>一个二进制文件的数据如下:
+<img alt="bin file" src="images/binfile01.jpg"></p>
+<p>图中数据是以十六进制显示的，最右边是解码以后的数据，当然，这时候我们是不知道这个文件的编码的，事实上字节流文件本身被看作是没有编码的，而我们也不必知道该文件的编码方式，字节流转整数说白了就是按字节读出数据之后按大端(big-endian)、小端(little-endian)和长度来解码，原始数据以二进制存储在磁盘上的文件里，如果文件里的数据以大端序存放，且每个数据长度为<code>32bits</code>，那我们读出前四个<code>byte</code>，就是比特字符串<code>b'\x31\x32\x61\x62'</code>，表示<code>0x31326162</code>或者说十进制<code>825385314</code>，而如果以小端序存放，则表示<code>0x62613231</code>或十进制<code>1650537009</code></p>
+<h4>字节流转整数</h4>
+<p>我们可以使用<code>ord()</code>一个字节一个字节的转换。</p>
+<div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;ord():返回单字符字符串的整数序号。</span>
+<span class="sd">ord(...)</span>
+<span class="sd">    ord(c) -&gt; integer</span>
+<span class="sd">    Return the integer ordinal of a one-character string.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">filepath</span> <span class="o">=</span> <span class="s1">&#39;binfile.bin&#39;</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">binfile</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">byte</span> <span class="o">=</span> <span class="n">binfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">byte</span><span class="p">))</span>    <span class="c1"># 这里为了方便查看结果，转为字符串形式</span>
+</pre></div>
+
+
+<p>也可以使用struct库来转换整个二进制字符串，这样可以按照多个字节一组来转换，struct库甚至可以设置以何种比特序(Byte Order)即大端序或小端序来解析(parse)：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 具体来说，可以动手尝试创建一个bitfile，这里用到的bitfile详见下文图片</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="n">filepath</span> <span class="o">=</span> <span class="s1">&#39;binfile.bin&#39;</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">binfile</span><span class="p">:</span>
+    <span class="c1"># &#39;rb&#39;读出来的是字节字符串`bytes()`，形如&#39;\x31\x32&#39;，如果此时使用`list(byteString)`将其转为list，那它每一项仍是以字节字符串格式存储</span>
+    <span class="c1"># 这与转成字节数组`bytearray(byteString)`不同，在字节数组中，数据是以二进制数字形式保存的</span>
+    <span class="c1"># 所以如果需要改写，那字节数组直接可以使用`0x31`或`49`等数字进行赋值，而list则需要使用`b&#39;\x31&#39;`这样的字节字符串进行赋值</span>
+    <span class="n">byteString</span> <span class="o">=</span> <span class="n">binfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>              <span class="c1"># 注意这里是指 1 byte, 即 8 bits</span>
+    <span class="n">byteTuple</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;BBBB&#39;</span><span class="p">,</span> <span class="n">byteString</span><span class="p">)</span>  
+    <span class="k">print</span><span class="p">(</span><span class="n">byteTuple</span><span class="p">)</span>                    <span class="c1"># (49, 50, 97, 98)</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">byteTuple</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;{:x}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>   <span class="c1"># 31      32      33      34</span>
+
+<span class="c1"># 字节串转成8位unsigned char，单字节没有大端序和小端序分别</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;BBBB&#39;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">))</span>   <span class="c1"># (49, 50, 97, 98)</span>
+
+<span class="c1"># 字节串转成32位unsigned long</span>
+<span class="c1"># little-endian（低字节低位，高字节高位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;L&#39;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">))</span>     <span class="c1"># (1650537009,) -&gt; 0x62613231</span>
+<span class="c1"># big-endian（低字节高位，高字节低位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&gt;L&#39;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">))</span>     <span class="c1"># (825385314,)  -&gt; 0x31326162</span>
+</pre></div>
+
+
+<h4>整数转字节流</h4>
+<div class="highlight"><pre><span></span><span class="c1"># 8位unsigned char转成字节串</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;BBBB&#39;</span><span class="p">,</span> <span class="mi">49</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">97</span><span class="p">,</span> <span class="mi">98</span><span class="p">)</span>   <span class="c1"># b&#39;\x31\x32\x61\x62&#39;</span>
+
+<span class="c1"># 32位unsigned long转成字节串</span>
+<span class="c1"># little-endian（低字节低位，高字节高位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&lt;L&#39;</span><span class="p">,</span> <span class="mi">1650537009</span><span class="p">)</span>        <span class="c1"># b&#39;\x31\x32\x61\x62&#39;</span>
+<span class="c1"># big-endian（低字节高位，高字节低位）</span>
+<span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;L&#39;</span><span class="p">,</span> <span class="mi">825385314</span><span class="p">)</span>         <span class="c1"># b&#39;\x31\x32\x61\x62&#39;</span>
+</pre></div>
+
+
+<h3>字节流(bytestream) &lt;-&gt; 字符流(Character Streams)</h3>
+<p>这两者的转换就是编码问题，通俗来讲，字符流(Character Streams)是指按照编码决定了将n个字节为一组的字节流(bytestream)，比如，解析(parse)'ascii'编码的文件是一个字节一组，解析'utf-16'的文件是两个字节一组。
+字节流(bytestream)与字符流(Character Streams)的转换和字节流(bytestream)与整数的转换不同的地方在于后者只是算数形式上的转换（二进制到十进制），而前者是按照某一种编码（映射）解析文件。
+比如还是这个二进制文件:
+<img alt="bin file" src="images/object_type_conversion00.jpg">
+再加上ASCII码表以说明相互关系：
+|  二进制   | 十进制 | 十六进制 | 字符  |
+| :-------: | :----: | :------: | :---: |
+| 0011 0001 |   49   |    31    |  '1'  |
+| 0011 0010 |   50   |    32    |  '2'  |
+| 0110 0001 |   97   |    61    |  'a'  |
+| 0110 0010 |   98   |    62    |  'b'  |</p>
+<p>其他编码同理，通常来说，由于<code>python2</code>与<code>python3</code>字符串的不同，所以在打开和关闭文件时，应该做好转换，在处理过程中，始终使用<code>unicode</code>编码，避免中途转换编码，减少错误的产生。</p>
+<h4>字节流转字符流（decode）</h4>
+<div class="highlight"><pre><span></span><span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>   <span class="c1"># u&#39;12ab&#39;</span>
+<span class="nb">bytes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x31\x32\x61\x62</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-16&#39;</span><span class="p">)</span>  <span class="c1"># u&#39;\u3231\u6261&#39; ，即&#39;ㄲ扡&#39;</span>
+
+<span class="c1"># 如果字节流(bytestream)是纯数字且为&#39;ascii&#39;编码，也可使用下面的方式，不过结果不是字符流而是解析以后的整数</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x31\x32</span><span class="s1">&#39;</span><span class="p">)</span>   <span class="c1"># 12</span>
+<span class="c1"># 与普通的转换相比：</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;0x31&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>    <span class="c1"># 49</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;0x32&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>    <span class="c1"># 50</span>
+<span class="nb">int</span><span class="p">(</span><span class="s1">&#39;0x3132&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>  <span class="c1"># 12594</span>
+<span class="c1"># very very confusing. orz..</span>
+<span class="c1"># Forgot it.</span>
+<span class="c1"># Let&#39;s continue good good study now...</span>
+</pre></div>
+
+
+<h4>字符流转字节流（encode）</h4>
+<div class="highlight"><pre><span></span><span class="s1">&#39;12ab&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>   <span class="c1"># &#39;12ab&#39;</span>
+<span class="c1"># 打印&#39;12ab&#39;但实际编码为b&#39;\x31\x32\x61\x62&#39;</span>
+</pre></div>
+
+
+<h3>Reference</h3>
+<p><a href="http://lixingcong.github.io/2016/03/06/convert-data-in-python/">python整数、字符串、字节串相互转换</a>
+<a href="https://draapho.github.io/2016/11/24/1621-python-string/">python 字符串处理</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/misc/shu-ju-lei-xing-zhuan-huan/">posted at 16:07</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags selected">python</a>
+                </div>
+            </article>
+
+                <div class="clear"></div>
+                <div class="pages">
+                            <a href="/tag/python/page/2" class="prev_page">&larr;&nbsp;Previous</a>
+                    <span>Page 3 of 3</span>
+                </div>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>
