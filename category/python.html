@@ -29,11 +29,160 @@
         </div>
     </header>
     <div id="wrapper">
-        <div id="content">            <h4 class="date">12月 17, 2018</h4>
+        <div id="content">            <h4 class="date">1月 20, 2019</h4>
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/python/iterators-and-generators/" rel="bookmark" title="Permanent Link to &quot;Iterators and Generators&quot;">Iterators and Generators</a>
+                    <a href="/content/python/guan-yu-lei-de-yi-xie-wen-ti" rel="bookmark" title="Permanent Link to &quot;关于类的一些问题&quot;">关于类的一些问题</a>
+                </h2>
+
+                
+                
+
+                <h3>关于类的一些问题：实例/类/静态方法和作用域</h3>
+<p>在写完<a href="./可变对象和不可变对象的一些问题.md">可变对象和不可变对象的一些问题</a>后，我想以往一样实例化多个实例时，突然想到如果我在某个实例中使用诸如<code>var.fun()</code>的语法修改了一个可变<code>var</code>，会产生什么后果？如果这个变量是类变量或者是实例变量呢？
+为了解决这个问题，所以写下了这篇文章，在解决上面的问题之前，首先我们需要了解对于变量，或者说属性，通过类名来访问它们和通过实例名来访问是不同的，前者是直接到类的命名空间寻找，而后者先在当前实例的命名空间寻找，如果没有找到，则在当前实例所绑定的类的命名空间中寻找。访问看上去没有问题，问题是使用<code>实例名.变量名</code>来对一个类变量进行赋值或是修改的时候，如果在实例的命名空间中没有同名的实例变量，那么，就不会像之前那样去类的命名空间中查找，而是新建一个实例变量，虽然这看起来让人难以置信，但是仔细想想，这个过程本身就是动态绑定，否则又置动态绑定于何处呢？而这个动态绑定从代码上来说和魔术方法<code>__getattr__()</code>,<code>__setattr__()</code>有关。</p>
+<p>不多说了，直接看代码</p>
+<div class="highlight"><pre><span></span><span class="c1"># coding: utf-8</span>
+<span class="kn">import</span> <span class="nn">dis</span>
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span> 
+    <span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span>     <span class="c1"># class_var_1，这也是类变量</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_var</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance_var</span> <span class="o">=</span> <span class="n">instance_var</span>
+
+    <span class="k">def</span> <span class="nf">instance_func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;定义实例方法，至少有一个self参数 &quot;&quot;&quot;</span>
+        <span class="n">local_var</span> <span class="o">=</span> <span class="bp">None</span>    <span class="c1"># 虽然在实例方法内，但这是局部变量</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;instance_list&#39;</span><span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;instance_func_run&#39;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">class_func</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 定义类方法，至少有一个cls参数 &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;class_func&#39;</span>    <span class="c1"># class_var_2</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">class_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;class_list&#39;</span><span class="p">]</span>
+        <span class="k">print</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;class_func_run&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">static_func</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot; 定义静态方法 ，无默认参数&quot;&quot;&quot;</span>
+        <span class="c1"># 局部变量，虽然static_func()是公用的，但执行完毕后就被回收，无法从外部访问</span>
+        <span class="c1"># 除非输入类变量或是实例变量</span>
+        <span class="n">static_list</span> <span class="o">=</span> <span class="s1">&#39;static_func&#39;</span>
+        <span class="k">print</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;static_func_run&#39;</span><span class="p">)</span>
+
+<span class="n">foo1</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="s2">&quot;instance_var1&quot;</span><span class="p">)</span>
+<span class="n">foo2</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="s2">&quot;instance_var2&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">foo1</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">instance_func</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">instance_func</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_func</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_func</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">static_func</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">static_func</span><span class="p">)</span>
+
+<span class="c1"># dis.dis(Foo.class_func)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="c1"># `class_var`应该尽量通过`类名.变量名`访问和修改，而不是`实例名.变量名`</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- class_var -----&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>       <span class="c1"># 实例`foo1`的命名空间中没有名为`class_var`的实例变量，所以向上查找类的命名空间中的`class_var`</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;world&#39;</span>    <span class="c1"># 通过`实例名.变量名`访问一旦出现赋值操作，若无对应的实例变量，则会在相应实例中创建实例变量</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>        <span class="c1"># 不会更改类中的变量</span>
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span> <span class="o">=</span> <span class="s1">&#39;Hello world&#39;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>       <span class="c1"># 访问之前创建的实例变量`class_var`而不是类变量`class_var`</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="c1"># `class_func()`的访问同理</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- class_func -----&quot;</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">class_func</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">class_func</span><span class="p">()</span>        <span class="c1"># 效果等同于`foo1.class_func()`，因为调用的是同一函数</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_var</span><span class="p">)</span>
+
+<span class="c1"># 对于可变变量使用`实例名.变量名`的访问可能是灾难性的</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- class_list -----&quot;</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">class_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>     <span class="c1"># 这一步等同于`Foo.class_func()`，因为调用的是同一函数</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">class_list</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">class_list</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">class_list</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;----- instance_list -----&quot;</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">instance_func</span><span class="p">()</span>
+<span class="n">foo2</span><span class="o">.</span><span class="n">instance_func</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">instance_list</span><span class="p">)</span>
+<span class="n">foo1</span><span class="o">.</span><span class="n">instance_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo1</span><span class="o">.</span><span class="n">instance_list</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">foo2</span><span class="o">.</span><span class="n">instance_list</span><span class="p">)</span>       <span class="c1"># 实例变量显然不受此影响</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">[&#39;__class__&#39;, &#39;__delattr__&#39;, &#39;__dict__&#39;, &#39;__doc__&#39;, &#39;__format__&#39;, &#39;__getattribute__&#39;, &#39;__hash__&#39;, &#39;__init__&#39;, &#39;__module__&#39;, &#39;__new__&#39;, &#39;__reduce__&#39;, &#39;__reduce_ex__&#39;, &#39;__repr__&#39;, &#39;__setattr__&#39;, &#39;__sizeof__&#39;, &#39;__str__&#39;, &#39;__subclasshook__&#39;, &#39;__weakref__&#39;, &#39;class_func&#39;, &#39;class_var&#39;, &#39;instance_func&#39;, &#39;instance_var&#39;, &#39;static_func&#39;]</span>
+<span class="sd">&lt;bound method Foo.instance_func of &lt;__main__.Foo object at 0x0000000001857E10&gt;&gt;</span>
+<span class="sd">&lt;bound method Foo.instance_func of &lt;__main__.Foo object at 0x00000000018642E8&gt;&gt;</span>
+<span class="sd">&lt;bound method type.class_func of &lt;class &#39;__main__.Foo&#39;&gt;&gt;</span>
+<span class="sd">&lt;bound method type.class_func of &lt;class &#39;__main__.Foo&#39;&gt;&gt;</span>
+<span class="sd">&lt;function static_func at 0x0000000001863668&gt;</span>
+<span class="sd">&lt;function static_func at 0x0000000001863668&gt;</span>
+<span class="sd">Hello</span>
+<span class="sd">Hello</span>
+<span class="sd">Hello</span>
+<span class="sd">----- class_var -----</span>
+<span class="sd">Hello</span>
+<span class="sd">world</span>
+<span class="sd">Hello</span>
+<span class="sd">Hello</span>
+<span class="sd">world</span>
+<span class="sd">Hello world</span>
+<span class="sd">Hello world</span>
+<span class="sd">----- class_func -----</span>
+<span class="sd">class_func_run</span>
+<span class="sd">world</span>
+<span class="sd">class_func_run</span>
+<span class="sd">class_func</span>
+<span class="sd">----- class_list -----</span>
+<span class="sd">[&#39;class_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">[&#39;class_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">[&#39;class_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">----- instance_list -----</span>
+<span class="sd">instance_func_run</span>
+<span class="sd">instance_func_run</span>
+<span class="sd">[&#39;instance_list&#39;]</span>
+<span class="sd">[&#39;instance_list&#39;, &#39;hello&#39;]</span>
+<span class="sd">[&#39;instance_list&#39;]</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>请结合结果关注注释部分，如果想加深了解，可以自己试试访问变量或函数，也可尝试下面步骤：</p>
+<ol>
+<li>你可以反注释代码中的注释部分，观察结果，并试着删除<code>cls.class_var</code>前的<code>cls</code>，看看有什么不同，这里涉及到变量作用域的问题</li>
+<li>试着删除<code>class Foo(object)</code>中的<code>(object)</code>，观察结果，这里涉及到新式类和旧式类</li>
+</ol>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/guan-yu-lei-de-yi-xie-wen-ti">posted at 16:08</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">12月 17, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/iterators-and-generators" rel="bookmark" title="Permanent Link to &quot;Iterators and Generators&quot;">Iterators and Generators</a>
                 </h2>
 
                 
@@ -184,26 +333,595 @@ Hello</p>
 
 <h4>总结</h4>
 <p>迭代、可迭代对象、迭代器、生成器的关系见下图：</p>
-<p><img alt="迭代器和生成器的关系" src="/images/Iterators and Generators Relationships.png"></p>
+<p><img alt="迭代器和生成器的关系" src="./images/Iterators%20and%20Generators%20Relationships.png"></p>
 <p>生成器的一些应用请参阅：<a href="https://liam0205.me/2017/06/30/generator-coroutine-in-python-basic-topics/">Python 中的黑暗角落（二）：生成器协程的调度问题</a></p>
 <h4>Reference</h4>
-<p><a href="https://docs.python.org/3/tutorial/classes.html#iterators">Official Class Reference</a>
-<a href="https://liam0205.me/2017/06/30/understanding-yield-in-python/">Python 中的黑暗角落（一）：理解 yield 关键字</a>
-<a href="https://dbader.org/blog/python-iterators">Python Iterators: A Step-By-Step Introduction</a>
-<a href="http://gohom.win/2015/09/07/PyIterator/">Python迭代器和生成器</a>
-<a href="https://nvie.com/posts/iterators-vs-generators/">Iterables vs. Iterators vs. Generators</a>
-<a href="http://www.bjhee.com/python-yield.html">谈谈Python的生成器</a></p>
+<ul>
+<li><a href="https://docs.python.org/3/tutorial/classes.html#iterators">Official Class Reference</a></li>
+<li><a href="https://liam0205.me/2017/06/30/understanding-yield-in-python/">Python 中的黑暗角落（一）：理解 yield 关键字</a></li>
+<li><a href="https://dbader.org/blog/python-iterators">Python Iterators: A Step-By-Step Introduction</a></li>
+<li><a href="http://gohom.win/2015/09/07/PyIterator/">Python迭代器和生成器</a></li>
+<li><a href="https://nvie.com/posts/iterators-vs-generators/">Iterables vs. Iterators vs. Generators</a></li>
+<li><a href="http://www.bjhee.com/python-yield.html">谈谈Python的生成器</a></li>
+</ul>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/python/iterators-and-generators/">posted at 22:52</a>
+                    <a href="/content/python/iterators-and-generators">posted at 22:52</a>
                     &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
                     &nbsp;<a href="/tag/iterator.html" class="tags">iterator</a>
                     &nbsp;<a href="/tag/generator.html" class="tags">generator</a>
                 </div>
+            </article>            <h4 class="date">11月 16, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/ke-bian-dui-xiang-he-bu-ke-bian-dui-xiang-de-yi-xie-wen-ti" rel="bookmark" title="Permanent Link to &quot;可变对象和不可变对象的一些问题&quot;">可变对象和不可变对象的一些问题</a>
+                </h2>
+
+                
+                
+
+                <h4>前言</h4>
+<p>如同名字一样，可变对象是指创建后其值可以被改变的对象（<code>list</code>, <code>dict</code>, <code>set</code>, etc.），而不可变对象则是指创建后值不可改变的对象（<code>number</code>, <code>string</code>, <code>tuple</code>, etc.）。
+这里说明了一些通常容易造成困惑的问题，并说明了可变/不可变对象区别的深入的原因是<code>python</code>是如何<code>parse</code>代码的，或者说字节码是如何执行的。</p>
+<h4>对象和id</h4>
+<p>在这之前，我们首先要了解什么是对象，请看下面代码：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+</pre></div>
+
+
+<p>那么问题是打印出来的<code>id</code>是谁的<code>id</code>？答案是整数<code>1</code>的<code>id</code>，而不是变量<code>a</code>的<code>id</code>，请记住这一点，为了防止被带偏，这是非常重要的。
+变量<code>a</code>和其它变量一样，都只是一个名字，类似于标识符一样的东西，<code>a = 1</code>是指：通过<code>=</code>号，将对象<code>1</code>绑定到了变量<code>a</code>上，仅此而已。在C语言中，<code>1</code>就仅仅是一个数字，但在<code>python</code>中，数字<code>1</code>是一个不可变对象，它甚至有自己的属性，这也是为什么从语法糖来说，<code>python</code>没有<code>++</code>这样的语法的原因。（当然，要支持<code>++</code>也是可以的，首先<code>int</code>类需要有个诸如<code>__selfadd__</code>的魔术方法，就像实现<code>+=</code>语法的<code>__iadd__</code>方法一样，之后编译时要支持<code>++</code>的语法，可以调用到该魔术方法，但是，从设计角度来说，<code>int</code>类从一开始就被设计成不可变对象，这也是<code>python</code>使用<code>for...in...</code>的语法而不是<code>for</code>的原因）</p>
+<h4>可变对象和不可变对象的定义</h4>
+<p>对于可变对象和不可变对象定义有个误解是把变量指向对象的<code>id</code>改变作为判断标准，认为只要<code>id</code>改变就是不可变对象，反之为可变对象，并且举出类似错误例子：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>    <span class="c1"># id(1)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>    <span class="c1"># id(2)</span>
+<span class="il">18441632L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+</pre></div>
+
+
+<p>现在你应该可以看出这个例子的疏漏之处，变量<code>a</code>前后指向不同的对象，<code>id</code>当然会改变，对于变量<code>a</code>，变量<code>b</code>对应的操作应该是这样：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>    <span class="c1"># id([1])</span>
+<span class="il">44322632L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>    <span class="c1"># id([1, 2])</span>
+</pre></div>
+
+
+<p>可以看到<code>id</code>同样会改变，仔细观察<code>b</code>重新赋值的<code>id</code>，其值等于之前错例中的<code>id</code>，说明是同一对象。</p>
+<p>通过上面例子我们可以看到不同操作带来的影响，通过赋值来改变对象和通过对象的方法来改变对象是不同的，明白这一点是很重要的。</p>
+<h4>绑定</h4>
+<p>对于赋值来说，其实所有赋值都是引用（虽然<code>python</code>中似乎没有这种说法），比如<code>a = b</code>或者<code>a = 1</code>，与是否为可变或不可变对象无关，参数传递也是如此。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="c1"># The [1] is not the above [1]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44322632L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">18441656L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44419368L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44419368L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>       <span class="c1"># The 1 is the above 1, because of the integer pool</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">18441656L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">5000</span>    <span class="c1"># The 5000 is not the above 5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44419392L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44419368L</span>
+</pre></div>
+
+
+<p>共有六组对比，第一二组，第三五组，第四六组说明了<code>=</code>右侧参数对于赋值的影响</p>
+<p>值得一提的是：后两组数据主要说明了<code>python</code>中整数池的影响，其范围为[-5，257)。</p>
+<p>对于第六组，有一个有趣的现象，只有在<code>command line</code>下运行才会出现该情况，如果是在文件或<code>command line</code>函数中定义，则<code>a</code>, <code>b</code>所指向的是同一个对象</p>
+<p>总之，如果不考虑整数池的影响，可变对象和不可变对象在赋值的时候（位于<code>=</code>号右侧）是没有差别的，只要<code>=</code>右侧参数同为对象或同为标识符，当然，在被赋值的时候，我们自然不能改变不可变对象其中的值，就像<code>(1, 2)</code>，甚至我们不能改变它的长度，但对于像<code>([1, 2], 3)</code>这样的不可变对象，我们当然可以改变其<code>[0]</code>项，因为<code>[1, 2]</code>本来就可变对象，就像<code>我的附庸的附庸，不是我的附庸</code>一样，外面<code>tuple</code>的不可变特性不能影响到里面<code>list</code>的可变性。</p>
+<h4>可变/不可变对象执行过程深入分析</h4>
+<p>从字节码角度说明了可变/不可变对象的区别，关于下面的内容你可能需要对<code>python</code>反汇编过程，字节码，和<code>dis</code>库有一定了解。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+  <span class="mi">3</span>           <span class="mi">6</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+             <span class="mi">12</span> <span class="n">BINARY_ADD</span>
+             <span class="mi">13</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+             <span class="mi">16</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+             <span class="mi">19</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">`co_consts`是一个包含了函数体内的任意实数的元组，`co_consts[0]`固定为函数返回值，因为当前无返回值，所以为`None`，执行过程是`LOAD_CONST`将`co_consts[1]`即`5000`推入堆栈顶部；之后`STORE_FAST`将堆栈顶部(TOS)储存到`co_varnames[0]`即变量a，这一步就是将`1`绑定到变量`a`，`co_varnames`是一个包含了函数体内使用的任意本地变量名字的元组；`LOAD_FAST`将`co_varnames[0]`即变量a的引用推入堆栈顶部；`LOAD_CONST`将`co_consts[2]`即`1`推入堆栈顶部，`BINARY_ADD`执行`TOS = TOS1 + TOS`，实现相加；`STORE_FAST`再次将堆栈顶部(TOS)绑定到`co_varnames[0]`即变量a；最后`LOAD_CONST`, `RETURN_VALUE`将返回值推入堆栈顶部，并将TOS返回给函数的调用者。</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+              <span class="mi">3</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">与下面列表的初始化对比，不可变对象是一次`LOAD_CONST`全部内容，注意此时的`foo.__code__.co_consts`值和`LOAD_CONST`调用的参数</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">...</span>     <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="o">...</span>     <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">BUILD_LIST</span>               <span class="mi">2</span>
+              <span class="mi">9</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+  <span class="mi">3</span>          <span class="mi">12</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+             <span class="mi">15</span> <span class="n">LOAD_ATTR</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">append</span><span class="p">)</span>
+             <span class="mi">18</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+             <span class="mi">21</span> <span class="n">CALL_FUNCTION</span>            <span class="mi">1</span>
+             <span class="mi">24</span> <span class="n">POP_TOP</span>
+
+  <span class="mi">4</span>          <span class="mi">25</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+             <span class="mi">28</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+             <span class="mi">31</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+             <span class="mi">34</span> <span class="n">STORE_SUBSCR</span>
+             <span class="mi">35</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+             <span class="mi">38</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">(</span><span class="s1">&#39;append&#39;</span><span class="p">,)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">`co_names`是一个包含了函数体内引用的任意非本地名字的元组，比如这里使用的`append()`函数。</span>
+<span class="sd">从第三行开始：`LOAD_FAST`将`co_varnames[0]`即变量b的引用推入堆栈顶部，`LOAD_ATTR`将会使用`getattr(TOS, co_names[namei])`替换TOS，这里相当于`getattr(b, &#39;append&#39;)`，即获得列表`[1, 2]`的`append()`方法；之后`LOAD_CONST`将`co_consts[3]`即`3`推入堆栈顶部，之后`CALL_FUNCTION(1)`代表函数有一个位置参数，此时堆栈顶部包含位置参数，最右侧的参数在最顶部，参数下面是可调用对象，即`append()`，之后会弹出（pop）所有参数和可调用对象，使用这些参数调用可调用对象，并将返回值推入堆栈顶端；`POP_TOP`移除堆栈顶端的值，变量`b`所绑定对象的值在上一步就已经更改了。</span>
+<span class="sd">从第四行开始：`LOAD_CONST`将`co_consts[4]`即`4`推入堆栈顶部；`LOAD_FAST`将`co_varnames[0]`即变量b的引用推入堆栈顶部；`LOAD_CONST`将`co_consts[2]`即`2`推入堆栈顶部；`STORE_SUBSCR`执行`TOS1[TOS] = TOS2`即`[1, 2, 3][2] = 4`；最后`LOAD_CONST`, `RETURN_VALUE`将返回值推入堆栈顶部，并将TOS返回给函数的调用者。</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/ke-bian-dui-xiang-he-bu-ke-bian-dui-xiang-de-yi-xie-wen-ti">posted at 22:06</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">11月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/and-or-operator-in-python" rel="bookmark" title="Permanent Link to &quot;python中的and, or操作符&quot;">python中的and, or操作符</a>
+                </h2>
+
+                
+                
+
+                <h3>何为真？何为假？</h3>
+<p>首先，要明确的是虽然布尔值只有<code>True</code>和<code>False</code>两种，但是在计算（<code>if</code>，<code>while</code>或表达式）中，以下的值会被认为是<code>False</code>值：</p>
+<ul>
+<li><code>None</code></li>
+<li><code>False</code></li>
+<li>任何数字类型的零值，如：<code>0</code>, <code>0L</code>, <code>0.0</code>, <code>0j</code></li>
+<li>任何长度为<code>0</code>的对象：<ul>
+<li>任何空序列，如：<code>''</code>, <code>()</code>, <code>[]</code></li>
+<li>任何空映射，如：<code>{}</code></li>
+<li>用户定义的类的实例，如果该类定义<code>__nonzero__()</code>或<code>__len __()</code>方法，则当该方法返回整数<code>0</code>或bool值<code>False</code></li>
+</ul>
+</li>
+</ul>
+<p>所有其他值都被认为是<code>True</code></p>
+<p>除非另有说明，具有布尔结果的操作和内置函数总是返回0或False表示false，1或True表示true。 （重要的例外：布尔运算或者并且始终返回其中一个操作数。）</p>
+<h3>短路</h3>
+<p>在大多数语言中，<code>and</code>和<code>or</code>都具有短路效应，比如对于<code>A and B</code>来说，如果判定<code>A</code>为<code>False</code>，那整个表达式一定为<code>False</code>，故不必计算后面的值（除非后面有布尔运算符<code>or</code>），表达式等同于执行<code>A if not A else B</code>；<code>or</code>运算符同理。</p>
+<p>值得注意的是，<code>and</code>和<code>or</code>返回的是操作数而不是布尔值，而<code>not</code>则返回布尔值。</p>
+<div class="highlight"><pre><span></span><span class="c1"># and, or </span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span>
+<span class="mi">2</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">2</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="mi">1</span>
+<span class="s1">&#39;&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="bp">None</span> <span class="ow">or</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">3</span>
+<span class="mi">3</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">2</span>
+<span class="mi">1</span>
+<span class="c1"># not</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">0</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<h3>优先级</h3>
+<p>先声明一点，<code>and</code>, <code>or</code>, <code>not</code>三者之间是没有任何优先级关系的。
+有些人认为优先级<code>not &gt; and &gt; or</code>，这纯粹是无稽之谈，<a href="https://docs.python.org/3.7/library/stdtypes.html#boolean-operations-and-or-not">官方文档</a>中的确提到：</p>
+<blockquote>
+<p>"These are the Boolean operations, ordered by ascending priority"</p>
+</blockquote>
+<p>但仔细阅读一下你会这里的排序是指<code>Notes</code>的排序而不是优先级，<strong>三者的计算顺序单纯的是从左往右并按照短路的原则进行计算</strong>。</p>
+<h4><code>not</code>具有更高优先级吗？</h4>
+<p><code>and</code>, <code>or</code>姑且不论，当把<code>not</code>和它们放在一起时，似乎<code>not</code>具有更高的优先级，这的确会使人迷惑，比如<code>0 or not 1</code>中是先计算<code>not 1</code>结果为<code>False</code>，之后再计算<code>0 or False</code>，结果等于<code>False</code>。这种论调推导出来的结论的确是对的，关于这一点我们谁也说服不了谁，所以让我们深入一点，借助<code>dis</code>模块来看看代码到底是怎么执行的：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">dis</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">10</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">UNARY_NOT</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">10</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p>这里为了演示方便，使用<code>lambda</code>表达式构建了一个返回<code>0 or not 1</code>表达式值的函数，使用普通函数可以达到同样效果。
+关于<code>dis</code>输出格式解释如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">源代码中的行号</th>
+<th align="center">字节码指令中的偏移量</th>
+<th align="center">字节码指令名称</th>
+<th align="center">指令的参数</th>
+<th align="center">实际参数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">2</td>
+<td align="center">0</td>
+<td align="center">LOAD_CONST</td>
+<td align="center">1</td>
+<td align="center">(0)</td>
+</tr>
+</tbody>
+</table>
+<p><code>LOAD_CONST</code>指令将整数<code>0</code>压入堆栈(stack)，之后执行<code>JUMP_IF_TRUE_OR_POP</code>命令，判断<code>0</code>，即栈顶（TOS:top-of-stack）是否为真，如果TOS为真，将字节码计数器设置为<code>10</code>，即跳转到字节码中偏移量为<code>10</code>的地方，并在堆栈上留下TOS；否则（TOS为假），弹出(pop)TOS。到这一步明显看出计算过程中先执行了<code>or</code>运算符，当<code>or</code>运算符左侧为真时，跳转执行<code>RETURN_VALUE</code>将TOS传给函数调用者；当<code>or</code>运算符左侧为假时，才将整数<code>1</code>压入堆栈(stack)，并执行<code>UNARY_NOT</code>运算，最后执行<code>RETURN_VALUE</code>返回<code>False</code>。可见<code>not</code>并没有比<code>and</code>和<code>or</code>更高的优先级。</p>
+<h4><code>and</code>, <code>or</code>也具有相同优先级</h4>
+<p>至于<code>and</code>和<code>or</code>的优先级：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">5</span> <span class="ow">and</span> <span class="mi">4</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">1</span> <span class="ow">or</span> <span class="mi">5</span> <span class="ow">and</span> <span class="mi">4</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_FALSE_OR_POP</span>    <span class="mi">15</span>
+             <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">5</span> <span class="ow">or</span> <span class="mi">4</span>
+<span class="mi">5</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">5</span> <span class="ow">or</span> <span class="mi">4</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">POP_JUMP_IF_FALSE</span>       <span class="mi">12</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p><code>POP_JUMP_IF_FALSE</code>命令的作用为：如果TOS为假，将字节码计数器设置为参数值并弹出TOS。也就是说，形如<code>A and B or C</code>这种格式如果<code>A</code>判断为<code>False</code>，那么整个式子的值就为<code>C</code></p>
+<h4><code>not</code>与<code>==</code>的优先级</h4>
+<p>那么<code>not</code>与<code>==</code>的优先级谁高谁低呢？</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">==</span> <span class="bp">True</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">==</span> <span class="bp">True</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_GLOBAL</span>              <span class="mi">0</span> <span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">COMPARE_OP</span>               <span class="mi">2</span> <span class="p">(</span><span class="o">==</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">UNARY_NOT</span>
+             <span class="mi">10</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p><code>not 2 == True</code>的结果为<code>True</code>说明了<code>==</code>的优先级大于<code>not</code>，<code>1 == True</code>为真，但<code>2 == True</code>为假，最后执行<code>not False</code>结果为真，之后的反编译证明了这一点。</p>
+<h4><code>in</code>, <code>not in</code>与<code>and</code>, <code>or</code>, <code>not</code>的优先级</h4>
+<p>当逻辑运算表达式中加入成员运算符<code>in</code>, <code>not in</code>时，计算顺序会变成什么样呢？</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">or</span> <span class="mi">1</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+  <span class="mi">1</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+             <span class="mi">12</span> <span class="n">COMPARE_OP</span>               <span class="mi">6</span> <span class="p">(</span><span class="ow">in</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="k">lambda</span> <span class="p">:</span> <span class="mi">0</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="mi">1</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">((</span><span class="mi">2</span><span class="p">,))</span>
+              <span class="mi">6</span> <span class="n">COMPARE_OP</span>               <span class="mi">6</span> <span class="p">(</span><span class="ow">in</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">JUMP_IF_TRUE_OR_POP</span>     <span class="mi">15</span>
+             <span class="mi">12</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="o">&gt;&gt;</span>   <span class="mi">15</span> <span class="n">RETURN_VALUE</span>
+</pre></div>
+
+
+<p>这里需要注意的是当计算<code>0 or 1 in [2]</code>时，<code>JUMP_IF_TRUE_OR_POP</code>这一步为真时，直接跳转到了<code>RETURN_VALUE</code>而不会去执行<code>COMPARE_OP</code>，与之前<code>A or B and C</code>是不同的，不要思维惯性。
+由此可见，成员运算符<code>in</code>, <code>not in</code>和<code>and</code>, <code>or</code>, <code>not</code>平级，完全按照从左到右的顺序执行，若遇到<code>and</code>, <code>or</code>则在这基础上运用<code>短路</code>原则，读者可自行验证<code>not in</code>的情况。</p>
+<p>事实上，身份运算符<code>is</code>, <code>is not</code>也是同理，在执行过程中，身份运算符、成员运算符、逻辑运算符都是最低优先级。
+最后，回字的4种写法，如果你觉得<code>None and None is None</code>的值为<code>true</code>或<code>false</code>，那么你也许应该把上文再看一遍。</p>
+<h3>Reference</h3>
+<p>关于字节码和反汇编更多参见：
+<em> <a href="https://opensource.com/article/18/4/introduction-python-bytecode">An introduction to Python bytecode</a>
+</em> <a href="https://docs.python.org/3/library/dis.html">dis — Disassembler for Python bytecode</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/and-or-operator-in-python">posted at 22:37</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">9月 01, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/pythonyi-chang" rel="bookmark" title="Permanent Link to &quot;python异常&quot;">python异常</a>
+                </h2>
+
+                
+                
+
+                <hr>
+<h4>如何捕获异常</h4>
+<p>在python中，我们通过<code>try..except..</code>语句来捕获异常，它的完全体如下：</p>
+<div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Execution statement</span>
+    <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">EOFError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;An EOF error occurred.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">e</span>
+<span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;An IO error occurred.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">e</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;exception&#39;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># 这里的代码只会在try语句里没有触发异常时运行,</span>
+    <span class="c1"># 但是这里的异常将 *不会* 被捕获</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;This would only run if no exception occurs. And an error here would NOT be caught.&#39;</span><span class="p">)</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="c1"># 无论是否发生异常，finally子句都将执行</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;This would be printed in every case.&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<h4>如何抛出异常</h4>
+<p>有的时候捕获异常后并不意味着操作的结束，形如下面的异常处理方式：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">256</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ValueError: byte must be in range(0, 256)&#39;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">foo</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">raise</span>   <span class="c1"># 注意这里会继续往上一层抛出错误</span>
+</pre></div>
+
+
+<p>如果没有继续往上一层抛出错误，那么出错时只会打印<code>'ValueError: byte must be in range(0, 256)'</code>而没有<code>tranceback</code>，使我们无法方便的追踪错误</p>
+<h4>Reference</h4>
+<ul>
+<li><a href="https://docs.python.org/3/library/exceptions.html#exception-hierarchy">exception-hierarchy</a></li>
+<li><a href="https://mozillazg.com/2016/08/python-the-right-way-to-catch-exception-then-reraise-another-exception.html">Python: 捕获异常然后再抛出另一个异常的正确姿势</a></li>
+</ul>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/pythonyi-chang">posted at 15:27</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/exception.html" class="tags">exception</a>
+                </div>
+            </article>            <h4 class="date">9月 01, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/pythonzi-sheng" rel="bookmark" title="Permanent Link to &quot;python自省&quot;">python自省</a>
+                </h2>
+
+                
+                
+
+                <p>事实上，自省这个概念并没有这么复杂，只要是能够返回对象状态、类型等数据的操作，都能称之为自省，比如内置的<code>__str__</code>和<code>__repr__</code>方法，对于字典的<code>has_key()</code>，检查对象是否有某个属性的<code>hasattr(obj, attr)</code>等，这里会列出几个常见的，希望在编程时可以注意到提供适当的自省方法。</p>
+<h4>dir</h4>
+<p>它是用于自省的最重要的函数之一。它返回列出了一个对象所拥有的属性和方法的列表。如果运行<code>dir()</code>而不传入参数，那么它会返回当前作用域的所有名字。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="nb">dir</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="p">[</span><span class="s1">&#39;__add__&#39;</span><span class="p">,</span> <span class="s1">&#39;__class__&#39;</span><span class="p">,</span> <span class="s1">&#39;__contains__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delattr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span> <span class="s1">&#39;__eq__&#39;</span><span class="p">,</span> <span class="s1">&#39;__format__&#39;</span><span class="p">,</span> <span class="s1">&#39;__ge__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getattribute__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__gt__&#39;</span><span class="p">,</span> <span class="s1">&#39;__hash__&#39;</span><span class="p">,</span> <span class="s1">&#39;__iadd__&#39;</span><span class="p">,</span> <span class="s1">&#39;__imul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">,</span> <span class="s1">&#39;__le__&#39;</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">,</span> <span class="s1">&#39;__lt__&#39;</span><span class="p">,</span> <span class="s1">&#39;__mul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__ne__&#39;</span><span class="p">,</span> <span class="s1">&#39;__new__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reduce__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reduce_ex__&#39;</span><span class="p">,</span> <span class="s1">&#39;__repr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reversed__&#39;</span><span class="p">,</span> <span class="s1">&#39;__rmul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setattr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__sizeof__&#39;</span><span class="p">,</span> <span class="s1">&#39;__str__&#39;</span><span class="p">,</span> <span class="s1">&#39;__subclasshook__&#39;</span><span class="p">,</span> <span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="s1">&#39;extend&#39;</span><span class="p">,</span> <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;insert&#39;</span><span class="p">,</span> <span class="s1">&#39;pop&#39;</span><span class="p">,</span> <span class="s1">&#39;remove&#39;</span><span class="p">,</span> <span class="s1">&#39;reverse&#39;</span><span class="p">,</span> <span class="s1">&#39;sort&#39;</span><span class="p">]</span>
+</pre></div>
+
+
+<h4>id</h4>
+<p>返回一个对象唯一ID</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">59914112L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">59914112L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="il">59739040L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">c</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">==</span> <span class="n">c</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<h4>type与instance</h4>
+<p><code>type</code>可以只接收一个参数，并打印其未知的所属的类型，而<code>isinstance</code>只能判断是否属于某个已知类型，所以,如果我们需要知道一个对象是什么类型，使用<code>isinstance</code>效率更高一些.</p>
+<p><code>isinstance</code>可以判断子类对象是否继承于父类；而<code>type</code>不可以，type只能把类对象识别为<code>instance</code>实例类型，因为老式类都是通过<code>instance</code>创建的，而新式类(New-Style Class)是从python2.2开始，继承自Object的class(eg. <code>class A(object)</code>)，而python2.x中如果没有继承自object，则为老式类，而在python3.x中不管有没有继承都是新式类，因为python3.x中只有新式类。</p>
+<p>总的来说，<code>type</code>主要用于获取未知变量的类型，<code>isinstance</code>主要用于判断A类是否继承于B类</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">A</span><span class="p">():</span>
+    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="k">pass</span>
+<span class="n">b</span><span class="o">=</span><span class="n">B</span><span class="p">()</span>
+
+<span class="c1">#isinstance判断对象b是不是B的实例</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">B</span><span class="p">))</span>
+<span class="c1">#isinstance判断对象b是不是A的实例</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">A</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">B</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">A</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">上述代码在python2.x中（老式类）的结果为：</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">False</span>
+<span class="sd">False</span>
+<span class="sd">上述代码在python3.x中（新式类）的结果为：</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">False</span>
+<span class="sd">可见判断对象类型（尤其是class对象），使用instance更好</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h4>inspect</h4>
+<p>详见<a href="https://docs.python.org/2/library/inspect.html">inspect — Inspect live objects</a></p>
+<h4>Reference</h4>
+<ul>
+<li><a href="https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes">New-style and classic classes</a></li>
+</ul>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/pythonzi-sheng">posted at 14:35</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>            <h4 class="date">7月 13, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/yamlbi-ji" rel="bookmark" title="Permanent Link to &quot;YAML笔记&quot;">YAML笔记</a>
+                </h2>
+
+                
+                
+
+                <p>表达数据序列的格式
+数据交换语言</p>
+<h4>YAML的适用领域</h4>
+<p>从本质上来说，配置不同只是我们对于数据表达方式的不同。我们常用于配置的标准大概有<code>JSON</code>, <code>YAML</code>, <code>TOML</code>, <code>XML</code>这几种，或许还有<code>ini</code>格式的文件，但严格意义上来说并没有<code>INI</code>这样的标准。如果只是简单保存设置，直接储存在<code>.py</code>文件里也是可以的，但有时我们需要考虑到可读性和不同程序进行交互时的情况，
+从语法上来说，<code>YAML</code>无疑是简洁而优雅的，但是所有的简洁基本上都不可避免的伴随着信息量的缺失，对于特殊的语法，这部分缺失就需要从其它渠道弥补，比如<a href="https://yaml.org/">帮助手册</a>，这也是手册如此详尽的原因。
+首先来说<code>JSON</code>，<code>YAML</code>相对于它大概有很多优点，但难以取代，泛用性是一点，在<code>JSON</code>中，通过<code>{}</code>来表示值的起始和结束，这一般被视作缺点，但是，在网络传输中，<code>JSON</code>可以删除所有的空白（空格和回车符、换行符、换页符、制表符、垂直制表符即<code>\r\n\f\t\v</code>）而不影响其解析，但<code>YAML</code>显然不行，而现在基本都是软<code>Tab</code>，这就意味着在网络传输时需要传输更多的信息量。另外，不是所有<code>JSON</code>解析器都支持注释，原因上面已经说过了。
+而在前四种标准中，<code>XML</code>作为一种标记语言应该是最特殊的，因为其本质上并不为储存配置而设置，所以与其它标准相比我们大概会觉得配置文件非常臃肿，但是它也是唯一一种可以对元素<code>Element</code>设置属性<code>Attribute</code>的标准，利用这些自定义属性，比如<code>id</code>，我们不必知道上层结构就可以获得配置的值，就实现来说，像<code>lxml</code>这样的库实际上都实现了一种<code>ORM(Object Relational Mapping)</code>，而不是像其它用于表达数据序列的标准那样只有<code>parse</code>与<code>dump</code>。</p>
+<h5>是否要支持运算逻辑？</h5>
+<p><code>to be or not to be, that's a question</code>，配置文件中是否应该支持逻辑运算呢？作为要被解析的文件，自然是运算逻辑越少越好，毕竟在配置中做运算的开销会减慢<code>parse</code>的速度。但<code>YAML</code>使用中有个痛点是假如设置中需要引用到大量本地文件，如果打算对本地文件使用相对地址，那么显然必须设置其参照的根目录，而这个根目录显然应该是绝对地址，虽然<code>YAML</code>中提供了锚定(anchors)的功能，但是因为没有字符串拼接或是计算<code>path</code>的功能，所以只能在<code>code</code>里初始化的时候完成，不然只能把设置全部写成绝对地址，而每项设置前面相同的路径可能会很长，当然，换个角度来说也可以说是整体构思的问题，避免这个问题，只设置一个根目录，其它全部在<code>code</code>里面完成，这样可能有更好的<code>log</code>和兼容。好吧，不要钻牛角尖了，这也是<code>YAML</code>和<code>TOML</code>本质上的区别，因为没有用过<code>TOML</code>，我只能说具体问题具体分析。</p>
+<h4>YAML中None的表示</h4>
+<p><a href="http://yaml.org/type/null.html">Null Language-Independent Type for YAML™ Version 1.1 </a></p>
+<p>Shorthand:!!null</p>
+<p>Canonical:~</p>
+<p>Regexp:
+ ~ # (canonical)
+|null|Null|NULL # (English)
+| # (Empty)</p>
+<p>Definition:
+Devoid of value.
+A null value is used to indicate the lack of a value. This is typically converted into any native null-like value (e.g., undef in Perl, None in Python). Note that a null is different from an empty string and that a mapping entry with some key and a null value is valid and different from not having that key in the mapping.</p>
+<h4>YAML中object的表示</h4>
+<p>如何在<code>yaml</code>中表示一个自定义的<code>python/object</code>？假设有以下目录：</p>
+<div class="highlight"><pre><span></span>$ tree
+<span class="p">|</span>-- module
+<span class="p">|</span>   <span class="p">|</span>-- mymodule.py
+<span class="p">|</span>-- project.py
+<span class="p">|</span>-- yaml
+    <span class="p">|</span>-- config.yaml
+</pre></div>
+
+
+<p>那么假如在<code>project.py</code>中打开<code>yaml</code>文件，需要在<code>yaml</code>中表示<code>mymodule,py</code>下名为<code>stuInfo</code>的<code>class</code>，那么应该在<code>yaml</code>中这样写：</p>
+<div class="highlight"><pre><span></span><span class="kt">!!python/object:module.mymodule.stuInfo</span>     <span class="c1"># 注意这里的路径，取决于打开配置文件的文件的目录，这里即`project.py`</span>
+<span class="nt">name</span><span class="p">:</span> <span class="s">&#39;Andy&#39;</span>
+<span class="nt">age</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">18</span>
+</pre></div>
+
+
+<h4>Reference</h4>
+<p>关于<code>YAML</code>语法可见官网或<a href="https://learnxinyminutes.com/docs/yaml/">Learn yaml in Y Minutes</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/yamlbi-ji">posted at 20:05</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/yaml.html" class="tags">yaml</a>
+                </div>
             </article>
+
+                <div class="clear"></div>
+                <div class="pages">
+                        <a href="/page/2" class="next_page">Next&nbsp;&rarr;</a>
+                    <span>Page 1 of 2</span>
+                </div>
 
             <div class="clear"></div>
             <footer>

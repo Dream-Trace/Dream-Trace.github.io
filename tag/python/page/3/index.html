@@ -28,177 +28,77 @@
         </div>
     </header>
     <div id="wrapper">
-        <div id="content">            <h4 class="date">4月 11, 2018</h4>
+        <div id="content">            <h4 class="date">2月 21, 2018</h4>
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/pythonman-tan-enumeratehe-die-dai" rel="bookmark" title="Permanent Link to &quot;python漫谈：enumerate和迭代&quot;">python漫谈：enumerate和迭代</a>
+                    <a href="/content/pythonproblem/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling" rel="bookmark" title="Permanent Link to &quot;数值转成N位字符串时如何保留前方无效的零&quot;">数值转成N位字符串时如何保留前方无效的零</a>
                 </h2>
 
                 
                 
 
-                <h4>首先从遍历列表说起...</h4>
-<p>假设我们需要在python中打印一个列表的值，如果是一个有C/java背景的初学者，那么他可能会这么写：</p>
-<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seasonList</span><span class="p">)):</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">seasonList</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <p>python中有一个容易忽略的陷阱，比方说你打算在一个大字符串中找一个数字，现在你有了一个函数（比如说<code>str.find()</code>），我们当然知道要传入一个数字字符串，但如果参数是纯数字呢，这个时候可能会理所当然的想到转义，比如<code>str(number)</code>，那么问题来了，如果你要找的数值前有零，那么使用<code>str()</code>转换后的结果可能会出乎你的意料：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 假设需要寻找010这样一个三进制数字</span>
+<span class="c1"># 需要注意的是数值前若有一个零，那么该数值会被认为是八进制数，导致结果不同</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>   <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 若数值前有两个或两个以上的零，则无效零将被舍去</span>
+<span class="nb">str</span><span class="p">(</span><span class="mo">0010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+<span class="c1"># 以上结果为python2.x上运行所得，在python3.x上均会报错：SyntaxError: invalid token</span>
+<span class="c1"># 所以要想在python3.x上转换八进制数，需要写成如下格式</span>
+<span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+
+<span class="c1"># 而如果使用格式化字符串,无论是在python2.x还是python3.x上都会被认为是八进制数</span>
+<span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="mo">010</span>          <span class="c1"># &#39;8&#39;</span>
+<span class="s2">&quot;{:d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
 </pre></div>
 
 
-<p>非常质朴的做法，但是问题在于：<strong>python中的<code>for</code>并不是用于循环的，它的主要用途是迭代或者说遍历，至于循环，那是<code>while</code>的工作。</strong>，这一点与C/java中用于循环的<code>for</code>和<code>while</code>不同，所以python中其实并不需要计数次数<code>i</code>，我们只需要简单的使用<code>for...in...</code>结构即可，由于<code>seasonList</code>对象本身是一个可迭代对象<sup id="fnref:1"><a class="footnote-ref" href="#fn:1" rel="footnote">1</a></sup>，Python处理<code>for</code>循环时，首先会调用内建函数<code>iter(seasonList)</code>，实际上会调用<code>seasonList.__iter__()</code>，返回其对应的迭代器。而后，<code>for</code>循环会调用内建函数<code>next()</code>，作用在迭代器上，获取迭代器的下一个元素，并赋值给<code>season</code>。此后，Python才开始执行循环体。</p>
-<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
-<span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">seasonList</span><span class="p">:</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">season</span><span class="p">)</span>
+<p>所以，依靠直接在数字前补零来转换是不可能的，不是被识别成八进制数，就是多余的零被舍去，数字和数字的字符串形式是不同的概念，这样转换的思路是错的，所以正确的做法是以字符串形式表示，并在前面加入'0'</p>
+<div class="highlight"><pre><span></span><span class="c1"># python提供了两种方法来达成目的：str.zfill() and str.rjust</span>
+<span class="n">number_str</span> <span class="o">=</span> <span class="s1">&#39;123&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">zfill(...)</span>
+<span class="sd">    S.zfill(width) -&gt; string</span>
+
+<span class="sd">    Pad a numeric string S with zeros on the left, to fill a field</span>
+<span class="sd">    of the specified width.  The string S is never truncated.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">number_str</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">rjust(...)</span>
+<span class="sd">    S.rjust(width[, fillchar]) -&gt; string</span>
+
+<span class="sd">    Return S right-justified in a string of length width. Padding is</span>
+<span class="sd">    done using the specified fill character (default is a space)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">number_str</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+
+<span class="c1"># 但以上方法的本质都是直接在字符串前补零，所以字符串表示的数值不是十进制则会出现问题</span>
+<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>       <span class="c1"># &#39;000x2000&#39;</span>
+<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>  <span class="c1"># &#39;000x2000&#39;</span>
+
+<span class="c1"># 所以转换十六进制或八进制或二进制数值我们使用格式化字符串，显然这种方法更加通用</span>
+<span class="s2">&quot;{:08x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0x2000</span><span class="p">)</span>   <span class="c1"># &#39;00002000&#39;     (Memory usage: 32bits)</span>
+<span class="s2">&quot;{:08o}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>     <span class="c1"># &#39;00000010&#39;     (Memory usage: 24bits)</span>
+<span class="s2">&quot;{:08b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mb">0b1010</span><span class="p">)</span>   <span class="c1"># &#39;00001010&#39;     (Memory usage: 8bits)</span>
+<span class="c1"># 之后如有需要，在前面补上&#39;0x&#39;, &#39;0o&#39;, &#39;0b&#39;的前缀即可</span>
+<span class="c1"># &#39;%&#39;格式化除了不能格式化二进制以外同理</span>
 </pre></div>
-
-
-<p>那么，我们如何同时获得索引和值呢？按照上面两种思路，我们可能会有两种写法：</p>
-<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
-<span class="c1"># No.1 Iterate through the index</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seasonList</span><span class="p">)):</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">seasonList</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-
-<span class="c1"># No.2 Iterate through the value</span>
-<span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">seasonList</span><span class="p">:</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">seasonList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">season</span><span class="p">),</span> <span class="n">season</span><span class="p">)</span>
-</pre></div>
-
-
-<p>由于方法二需要<code>index()</code>方法来返回索引，所以方法一的效率会远远大于方法二，并且随着<code>seasonList</code>长度的增加而增加，但是方法一也并非完美，期间生成了一个用于计数的列表而并非数值，如果<code>seasonList</code>的长度很长，那么这个数组会占用大量不必要的内存<sup id="fnref:2"><a class="footnote-ref" href="#fn:2" rel="footnote">2</a></sup>。那么，这是否意味着直接对其迭代不如求出索引之后迭代索引呢，如果两者函数体内都不做任何操作(<code>pass</code>)，虽然两者都是都迭代，但由于方法一多了求长度以及生成计数列表这一操作，方法二的效率会大于方法一（只有当list长度为个位数时，在一定几率下，方法一的<strong>耗时</strong>可能会小于方法二）</p>
-<h4>使用enumerate()</h4>
-<p>由上所述，为了优雅的获得索引和值，我们需要使用enumerate()函数，该函数将会返回一个枚举（enumerate）对象，它是可迭代的，每次返回一个元组，关于迭代的更多内容，可参见###迭代器和生成器###</p>
-<div class="highlight"><pre><span></span><span class="n">seasonList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Spring&#39;</span><span class="p">,</span> <span class="s1">&#39;Summer&#39;</span><span class="p">,</span> <span class="s1">&#39;Fall&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
-<span class="c1"># No.3 Iterate through the enumerate()</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">season</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seasonList</span><span class="p">):</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">season</span><span class="p">)</span>
-</pre></div>
-
-
-<blockquote>
-<p>output:
-(0, 'Spring')
-(1, 'Summer')
-(2, 'Fall')
-(3, 'Winter')</p>
-</blockquote>
-<p>可以看到每次返回的元组都会经过<code>for...in...</code>解包，从而给变量<code>i</code>、<code>season</code>赋值，关于解包嵌套数据结构，请参见<a href="https://dbader.org/blog/python-nested-unpacking">Unpacking Nested Data Structures in Python</a></p>
-<p>另外，enumerate()函数还允许我们自定义起始索引值。接受一个可选参数，该参数允许你为本次循环中的计数器变量设置初始值：</p>
-<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">season</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seasonList</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">season</span><span class="p">)</span>
-</pre></div>
-
-
-<blockquote>
-<p>output:
-(1, 'Spring')
-(2, 'Summer')
-(3, 'Fall')
-(4, 'Winter')</p>
-</blockquote>
-<h4>效率对比</h4>
-<p><code>seasonList[i]</code>与<code>enumerate()</code>的效率比较，使用python2.7在win10下的结果，总的来说，在列表长度较小时（0～100），第一种方法占优，当列表较大，第二种方法占优。但是令人困惑的是列表长度（1000～2000）时，第一种方法似乎又重新占优了，以下是测试代码</p>
-<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="n">testList</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">output1</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">output2</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="n">length</span> <span class="o">=</span> <span class="mi">80</span>
-<span class="n">exec_times</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="k">print</span><span class="p">(</span><span class="s2">&quot;list length = </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">length</span><span class="p">)</span>
-
-<span class="k">while</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
-    <span class="n">testList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100000</span><span class="p">))</span>
-    <span class="n">length</span> <span class="o">=</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span>
-
-<span class="k">def</span> <span class="nf">time_analyze</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">clock</span>
-    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">exec_times</span><span class="p">):</span>
-        <span class="n">func</span><span class="p">()</span>
-    <span class="n">finish</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
-    <span class="k">print</span> <span class="s2">&quot;{:&lt;20}{:10.10} s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">finish</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
-
-<span class="c1"># No.1</span>
-<span class="k">def</span> <span class="nf">searchByIndex</span><span class="p">():</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">testList</span><span class="p">)):</span>
-        <span class="n">output1</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span><span class="n">testList</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
-<span class="c1"># No.2</span>
-<span class="k">def</span> <span class="nf">searchByEnum</span><span class="p">():</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">testList</span><span class="p">):</span>
-        <span class="n">output2</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span><span class="n">value</span><span class="p">))</span>
-
-<span class="n">time_analyze</span><span class="p">(</span><span class="n">searchByIndex</span><span class="p">)</span>
-<span class="n">time_analyze</span><span class="p">(</span><span class="n">searchByEnum</span><span class="p">)</span>
-</pre></div>
-
-
-<h4>实现一个enumerate函数</h4>
-<p>实现一个迭代器必须要有<code>__iter__()</code>方法和<code>next()</code>方法（在python3.x中为<code>__next__()</code>方法）。下面实现的方法是将迭代对象和迭代器合并在一起的形式，故生成的迭代器无法多次使用，还有将两者分开的形式，详见###迭代器和生成器###</p>
-<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">myEnumerate</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">]</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="n">index</span><span class="p">,</span> <span class="n">item</span>
-</pre></div>
-
-
-<p>上面的代码实现的迭代器有点繁琐，我们可以使用<code>yield</code>关键词来实现一个生成器，一个可迭代的并且简洁的简洁的方案，使用next()方法会依次返回元素，并且越界时报StopIteration异常。</p>
-<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myEnumerate</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span>
-        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
-
-<span class="n">it</span> <span class="o">=</span> <span class="n">myEnumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
-<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># (0, 0)</span>
-<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># (1, 1)</span>
-<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># (2, 2)</span>
-<span class="k">print</span> <span class="n">it</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>         <span class="c1"># StopIteration</span>
-</pre></div>
-
-
-<p>Python 中的顺序类型，都是可迭代的（<code>list</code>, <code>tuple</code>, <code>string</code>）。其余包括 <code>dict</code>, <code>set</code>, <code>file</code> 也是可迭代的。对于用户自己实现的类型，如果提供了 <code>__iter__()</code> 或者 <code>__getitem__()</code> 方法，那么该类的对象也是可迭代的。</p>
-<h4>Reference</h4>
-<p><a href="https://docs.python.org/2/library/functions.html#enumerate">Official Built-in Functions Reference</a>
-<a href="https://dbader.org/blog/python-enumerate">Python’s enumerate() Function Demystified</a>
-<a href="http://www.cnblogs.com/xianwang/p/4907890.html">iter, yield与enumerate的实现</a></p>
-<div class="footnote">
-<hr>
-<ol>
-<li id="fn:1">
-<p>关于可迭代对象：Python中的顺序类型，都是可迭代的（<code>list</code>、<code>tuple</code>、<code>string</code>），其余包括<code>dict</code>、<code>set</code>、<code>file</code>也是可迭代的。对于用户自己实现的类型，如果提供了<code>__iter__()</code>或者<code>__getitem__()</code>方法，那么该类的对象也是可迭代的。&#160;<a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-<li id="fn:2">
-<p>为了解决上述问题，在python2.x中提供了另外一个函数<code>xrange()</code>，这个函数和<code>range()</code>非常相似，它返回一个生成器，由于惰性计算的原因，即生成器表达式只有在被检索时候，才会被赋值，所以其占用内存比<code>range()</code>会小很多，而在Python3中，<code>range</code>相当于Python2中的<code>xrange</code>；而Python2中的<code>range</code>可以用<code>list(range())</code>来实现。&#160;<a class="footnote-backref" href="#fnref:2" rev="footnote" title="Jump back to footnote 2 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/pythonman-tan-enumeratehe-die-dai">posted at 20:05</a>
+                    <a href="/content/pythonproblem/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling">posted at 11:02</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonproblem.html" rel="tag">python.problem</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags selected">python</a>
-                    &nbsp;<a href="/tag/iterator.html" class="tags">iterator</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
                 </div>
             </article>            <h4 class="date">2月 04, 2018</h4>
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/pythonzhong-de-yi-xie-zhu-yi-dian" rel="bookmark" title="Permanent Link to &quot;python中的一些注意点&quot;">python中的一些注意点</a>
+                    <a href="/content/pythonproblem/python-problem-note" rel="bookmark" title="Permanent Link to &quot;python中的一些注意点&quot;">python中的一些注意点</a>
                 </h2>
 
                 
@@ -287,7 +187,8 @@ r 取出来的是\n</p>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/pythonzhong-de-yi-xie-zhu-yi-dian">posted at 15:19</a>
+                    <a href="/content/pythonproblem/python-problem-note">posted at 15:19</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonproblem.html" rel="tag">python.problem</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags selected">python</a>
                     &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
@@ -296,7 +197,7 @@ r 取出来的是\n</p>
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/shu-ju-lei-xing-zhuan-huan" rel="bookmark" title="Permanent Link to &quot;数据类型转换&quot;">数据类型转换</a>
+                    <a href="/content/python/shu-ju-lei-xing-zhuan-huan" rel="bookmark" title="Permanent Link to &quot;数据类型转换&quot;">数据类型转换</a>
                 </h2>
 
                 
@@ -495,12 +396,15 @@ r 取出来的是\n</p>
 
 
 <h3>Reference</h3>
-<p><a href="http://lixingcong.github.io/2016/03/06/convert-data-in-python/">python整数、字符串、字节串相互转换</a>
-<a href="https://draapho.github.io/2016/11/24/1621-python-string/">python 字符串处理</a></p>
+<ul>
+<li><a href="http://lixingcong.github.io/2016/03/06/convert-data-in-python/">python整数、字符串、字节串相互转换</a></li>
+<li><a href="https://draapho.github.io/2016/11/24/1621-python-string/">python 字符串处理</a></li>
+</ul>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/shu-ju-lei-xing-zhuan-huan">posted at 16:07</a>
+                    <a href="/content/python/shu-ju-lei-xing-zhuan-huan">posted at 16:07</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags selected">python</a>
                 </div>

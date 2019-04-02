@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | 函数默认参数为可变数据类型的问题</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python,problem" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">9月 04, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/pythonproblem/the-problem-of-function-default-parameters-being-variable-data-types" rel="bookmark" title="Permanent Link to &quot;函数默认参数为可变数据类型的问题&quot;">函数默认参数为可变数据类型的问题</a>
+                </h2>
+
+                
+                
+
+                <h4>当函数拥有一个可变类型的默认参数..</h4>
+<p>众所周知，python中的数据类型分为可变(mutable)和不可变(immutable)两种类型，这里暗含一个巨大的坑就是当函数的默认参数为可变(mutable)类型时，函数的运行结果可能会出乎你的意料，让我们来看一个例子：</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generateCommand</span><span class="p">(</span><span class="n">baseCommand</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="c1"># read config and generate command option</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;This is&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;command option&#39;</span><span class="p">]</span>
+    <span class="n">baseCommand</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baseCommand</span>
+
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;, &#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+</pre></div>
+
+
+<p>可以看出，默认参数只会运算一次，而不是每次被调用时都会重新运算，而<code>baseCommand</code>是一个可变类型，导致如果没有赋值，每次新的计算时都不会重新将其赋值为空列表.</p>
+<h4>怎样避免？</h4>
+<p>我们定义默认参数时应该尽量避免使用可变参数，比如像下面这样：（如果一定需要则需要写明注释，防止其他人调用接口出错）</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generateCommand</span><span class="p">(</span><span class="n">baseCommand</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">baseCommand</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>   <span class="c1"># Can be written as &#39;baseCommand == None&#39;, but use &#39;is&#39; faster.</span>
+        <span class="n">baseCommand</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># read config and generate command option</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-a&#39;</span><span class="p">,</span> <span class="s1">&#39;This is&#39;</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="s1">&#39;command option&#39;</span><span class="p">]</span>
+    <span class="n">baseCommand</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">baseCommand</span>
+
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+<span class="n">generateCommand</span><span class="p">()</span> <span class="c1"># [&#39;-a&#39;, &#39;This is&#39;, &#39;-b&#39;, &#39;command option&#39;]</span>
+</pre></div>
+
+
+<p>值得注意的是，对于<code>None</code>来说，因为其有且仅有一个，所以可以使用<code>is None</code>代替<code>== None</code>，而事实上使用<code>is</code>速度更快，因为<code>is</code>是一个快速的<code>id</code>比较，而<code>==</code>需要调用内置函数<code>__eq__()</code>并查找被比较的值进行比较。</p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/pythonproblem/the-problem-of-function-default-parameters-being-variable-data-types">posted at 21:14</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonproblem.html" rel="tag">python.problem</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

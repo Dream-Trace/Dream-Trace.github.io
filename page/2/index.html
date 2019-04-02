@@ -27,75 +27,57 @@
         </div>
     </header>
     <div id="wrapper">
-        <div id="content">            <h4 class="date">9月 08, 2018</h4>
+        <div id="content">            <h4 class="date">9月 16, 2018</h4>
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling" rel="bookmark" title="Permanent Link to &quot;数值转成N位字符串时如何保留前方无效的零&quot;">数值转成N位字符串时如何保留前方无效的零</a>
+                    <a href="/content/pythonlibrary/pipenvshi-yong-jin-jie" rel="bookmark" title="Permanent Link to &quot;pipenv使用进阶&quot;">pipenv使用进阶</a>
                 </h2>
 
                 
                 
 
-                <p>python中有一个容易忽略的陷阱，比方说你打算在一个大字符串中找一个数字，现在你有了一个函数（比如说<code>str.find()</code>），我们当然知道要传入一个数字字符串，但如果是纯数字呢，这个时候可能会理所当然的想到转义，比如<code>str(number)</code>，那么问题来了，如果你要找的数值前有零，直接转换的结果可能会出乎你的意料：</p>
-<div class="highlight"><pre><span></span><span class="c1"># 需要注意的是数值前若有一个零，那么该数值会被认为是八进制数，导致结果不同</span>
-<span class="nb">str</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>   <span class="c1"># &#39;8&#39;</span>
-<span class="c1"># 若数值前有两个或两个以上的零，则无效零将被舍去</span>
-<span class="nb">str</span><span class="p">(</span><span class="mo">0010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
-<span class="c1"># 以上结果为python2.x上运行所得，在python3.x上均会报错：SyntaxError: invalid token</span>
-<span class="c1"># 所以要想在python3.x上转换八进制数，需要写成如下格式</span>
-<span class="nb">str</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
-
-<span class="c1"># 而如果使用格式化字符串,无论是在python2.x还是python3.x上都会被认为是八进制数</span>
-<span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="mo">010</span>          <span class="c1"># &#39;8&#39;</span>
-<span class="s2">&quot;{:d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mo">010</span><span class="p">)</span>  <span class="c1"># &#39;8&#39;</span>
+                <h4>自定义虚拟环境的路径</h4>
+<p><code>pipenv</code>使用<code>pew</code>来管理虚拟环境的路径，我们可以自定义<code>WORKON_HOME</code>环境变量来设置虚拟环境的路径，或者使用<code>pipenv</code>内置的环境变量<code>PIPENV_VENV_IN_PROJECT</code>，将虚拟环境设置在每个项目的根目录下的<code>.venv</code>文件夹。</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">WORKON_HOME</span><span class="o">=</span>~/.venvs       <span class="c1"># default: ~/.virtualenvs/test-Shuk7a5m</span>
+<span class="c1"># or</span>
+<span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>   <span class="c1"># %project_root_path%/.venv</span>
 </pre></div>
 
 
-<p>所以，依靠直接在数字前补零来转换是不可能的，不是被识别成八进制数，就是多余的零被舍去，所以正确的做法是在字符串下加入'0'</p>
-<div class="highlight"><pre><span></span><span class="c1"># str.zfill() and str.rjust</span>
-<span class="n">number_str</span> <span class="o">=</span> <span class="s1">&#39;123&#39;</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">zfill(...)</span>
-<span class="sd">    S.zfill(width) -&gt; string</span>
+<p><code>bash</code>配置在<code>.bashrc</code>或<code>.bash_profile</code>中，<code>Zsh</code>配置在<code>.zshrc</code>，其它<code>Shell</code>以此类推，也可直接写入系统环境变量。</p>
+<h4>自动激活虚拟环境</h4>
+<p>配合<code>autoenv</code>或<code>virtualenv-autodetect</code>可实现自动激活环境，和设置<code>PIPENV_VENV_IN_PROJECT</code>环境变量可以自动激活虚拟环境。</p>
+<p>在.bashrc或.bash_profile中配置如下</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>
+<span class="nb">source</span> /path/to/virtualenv-autodetect.sh
+</pre></div>
 
-<span class="sd">    Pad a numeric string S with zeros on the left, to fill a field</span>
-<span class="sd">    of the specified width.  The string S is never truncated.</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="n">number_str</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">rjust(...)</span>
-<span class="sd">    S.rjust(width[, fillchar]) -&gt; string</span>
 
-<span class="sd">    Return S right-justified in a string of length width. Padding is</span>
-<span class="sd">    done using the specified fill character (default is a space)</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="n">number_str</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>   <span class="c1"># &#39;00000123&#39;</span>
+<p>如果使用了oh-my-zsh, 可以直接使用它的插件形式</p>
+<div class="highlight"><pre><span></span><span class="c1"># 安装插件</span>
+$ git@github.com:RobertDeRose/virtualenv-autodetect.git ~/.oh-my-zsh/custom/plugins
+</pre></div>
 
-<span class="c1"># 以上方法都是直接在字符串前补零，若数值不是十进制则会出现问题</span>
-<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>       <span class="c1"># &#39;000x2000&#39;</span>
-<span class="s1">&#39;0x2000&#39;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span>  <span class="c1"># &#39;000x2000&#39;</span>
 
-<span class="c1"># 所以转换十六进制或八进制或二进制数值我们使用格式化字符串</span>
-<span class="s2">&quot;{:08x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mh">0x2000</span><span class="p">)</span>   <span class="c1"># &#39;00002000&#39;     (Memory usage: 32bits)</span>
-<span class="s2">&quot;{:08o}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">0</span><span class="n">o10</span><span class="p">)</span>     <span class="c1"># &#39;00000010&#39;     (Memory usage: 24bits)</span>
-<span class="s2">&quot;{:08b}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mb">0b1010</span><span class="p">)</span>   <span class="c1"># &#39;00001010&#39;     (Memory usage: 8bits)</span>
-<span class="c1"># 之后如有需要，在前面补上&#39;0x&#39;, &#39;0o&#39;, &#39;0b&#39;的前缀即可</span>
-<span class="c1"># &#39;%&#39;格式化除了不能格式化二进制以外同理</span>
+<p>再修改.zshrc文件启动插件</p>
+<div class="highlight"><pre><span></span><span class="c1"># 找到启动plugins的行添加启用插件</span>
+<span class="nv">plugins</span><span class="o">=(</span>... virtualenv-autodetect<span class="o">)</span>
 </pre></div>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/shu-zhi-zhuan-cheng-nwei-zi-fu-chuan-shi-ru-he-bao-liu-qian-fang-wu-xiao-de-ling">posted at 11:02</a>
+                    <a href="/content/pythonlibrary/pipenvshi-yong-jin-jie">posted at 17:03</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonlibrary.html" rel="tag">python.library</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
-                    &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
+                    &nbsp;<a href="/tag/technicalbasics.html" class="tags">technicalBasics</a>
                 </div>
             </article>            <h4 class="date">9月 04, 2018</h4>
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/han-shu-mo-ren-can-shu-wei-ke-bian-shu-ju-lei-xing-de-wen-ti" rel="bookmark" title="Permanent Link to &quot;函数默认参数为可变数据类型的问题&quot;">函数默认参数为可变数据类型的问题</a>
+                    <a href="/content/pythonproblem/the-problem-of-function-default-parameters-being-variable-data-types" rel="bookmark" title="Permanent Link to &quot;函数默认参数为可变数据类型的问题&quot;">函数默认参数为可变数据类型的问题</a>
                 </h2>
 
                 
@@ -134,7 +116,8 @@
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/han-shu-mo-ren-can-shu-wei-ke-bian-shu-ju-lei-xing-de-wen-ti">posted at 21:14</a>
+                    <a href="/content/pythonproblem/the-problem-of-function-default-parameters-being-variable-data-types">posted at 21:14</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonproblem.html" rel="tag">python.problem</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
                     &nbsp;<a href="/tag/problem.html" class="tags">problem</a>
@@ -143,13 +126,14 @@
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/pythonyi-chang" rel="bookmark" title="Permanent Link to &quot;python异常&quot;">python异常</a>
+                    <a href="/content/python/pythonyi-chang" rel="bookmark" title="Permanent Link to &quot;python异常&quot;">python异常</a>
                 </h2>
 
                 
                 
 
-                <h4>如何捕获异常</h4>
+                <hr>
+<h4>如何捕获异常</h4>
 <p>在python中，我们通过<code>try..except..</code>语句来捕获异常，它的完全体如下：</p>
 <div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
     <span class="c1"># Execution statement</span>
@@ -187,12 +171,15 @@
 
 <p>如果没有继续往上一层抛出错误，那么出错时只会打印<code>'ValueError: byte must be in range(0, 256)'</code>而没有<code>tranceback</code>，使我们无法方便的追踪错误</p>
 <h4>Reference</h4>
-<p><a href="https://docs.python.org/3/library/exceptions.html#exception-hierarchy">exception-hierarchy</a>
-<a href="https://mozillazg.com/2016/08/python-the-right-way-to-catch-exception-then-reraise-another-exception.html">Python: 捕获异常然后再抛出另一个异常的正确姿势</a></p>
+<ul>
+<li><a href="https://docs.python.org/3/library/exceptions.html#exception-hierarchy">exception-hierarchy</a></li>
+<li><a href="https://mozillazg.com/2016/08/python-the-right-way-to-catch-exception-then-reraise-another-exception.html">Python: 捕获异常然后再抛出另一个异常的正确姿势</a></li>
+</ul>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/pythonyi-chang">posted at 15:27</a>
+                    <a href="/content/python/pythonyi-chang">posted at 15:27</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
                     &nbsp;<a href="/tag/exception.html" class="tags">exception</a>
@@ -201,7 +188,7 @@
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/pythonzi-sheng" rel="bookmark" title="Permanent Link to &quot;python自省&quot;">python自省</a>
+                    <a href="/content/python/pythonzi-sheng" rel="bookmark" title="Permanent Link to &quot;python自省&quot;">python自省</a>
                 </h2>
 
                 
@@ -271,11 +258,14 @@
 <h4>inspect</h4>
 <p>详见<a href="https://docs.python.org/2/library/inspect.html">inspect — Inspect live objects</a></p>
 <h4>Reference</h4>
-<p><a href="https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes">New-style and classic classes</a></p>
+<ul>
+<li><a href="https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes">New-style and classic classes</a></li>
+</ul>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/pythonzi-sheng">posted at 14:35</a>
+                    <a href="/content/python/pythonzi-sheng">posted at 14:35</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
                 </div>
@@ -313,9 +303,11 @@ BOM（byte order mark）是为UTF-16和UTF-32准备的，用于标记字节序�
 <p>以下是utf-8 file with BOM，可以看出utf-8的BOM是无法确定字节顺序的
 <img alt="utf-8 file with BOM" src="./images/big-endian%20and%20little-endian_02.jpg"></p>
 <h4>Reference</h4>
-<p><a href="http://www.ruanyifeng.com/blog/2016/11/byte-order.html">理解字节序</a>
-<a href="https://atedev.wordpress.com/2007/09/19/bom-bom-bom/">BOM BOM BOM</a>
-<a href="https://blog.csdn.net/fhzaitian/article/details/51482716">UTF-8到底需不需要 BOM？</a></p>
+<ul>
+<li><a href="http://www.ruanyifeng.com/blog/2016/11/byte-order.html">理解字节序</a></li>
+<li><a href="https://atedev.wordpress.com/2007/09/19/bom-bom-bom/">BOM BOM BOM</a></li>
+<li><a href="https://blog.csdn.net/fhzaitian/article/details/51482716">UTF-8到底需不需要 BOM？</a></li>
+</ul>
                 <div class="clear"></div>
 
                 <div class="info">
@@ -327,7 +319,7 @@ BOM（byte order mark）是为UTF-16和UTF-32准备的，用于标记字节序�
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/yamlde-zhu-yi-dian" rel="bookmark" title="Permanent Link to &quot;YAML的注意点&quot;">YAML的注意点</a>
+                    <a href="/content/python/yamlbi-ji" rel="bookmark" title="Permanent Link to &quot;YAML笔记&quot;">YAML笔记</a>
                 </h2>
 
                 
@@ -376,7 +368,8 @@ A null value is used to indicate the lack of a value. This is typically converte
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/yamlde-zhu-yi-dian">posted at 20:05</a>
+                    <a href="/content/python/yamlbi-ji">posted at 20:05</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
                     &nbsp;<a href="/tag/yaml.html" class="tags">yaml</a>
@@ -385,7 +378,7 @@ A null value is used to indicate the lack of a value. This is typically converte
 
             <article class="post">
                 <h2 class="title">
-                    <a href="/content/misc/pytestcan-shu-hua-shun-xu-de-wen-ti" rel="bookmark" title="Permanent Link to &quot;pytest参数化顺序的问题&quot;">pytest参数化顺序的问题</a>
+                    <a href="/content/pythonlibrary/pytestcan-shu-hua-shun-xu-de-wen-ti" rel="bookmark" title="Permanent Link to &quot;pytest参数化顺序的问题&quot;">pytest参数化顺序的问题</a>
                 </h2>
 
                 
@@ -490,11 +483,14 @@ A null value is used to indicate the lack of a value. This is typically converte
 
 <p>所以说参数化过程是一种先进后出的堆栈，但对于顺序有要求时需要注意这一点。</p>
 <h4>Reference</h4>
-<p><a href="https://docs.pytest.org/en/latest/parametrize.html#pytest-mark-parametrize">Parametrizing fixtures and test functions</a></p>
+<ul>
+<li><a href="https://docs.pytest.org/en/latest/parametrize.html#pytest-mark-parametrize">Parametrizing fixtures and test functions</a></li>
+</ul>
                 <div class="clear"></div>
 
                 <div class="info">
-                    <a href="/content/misc/pytestcan-shu-hua-shun-xu-de-wen-ti">posted at 21:58</a>
+                    <a href="/content/pythonlibrary/pytestcan-shu-hua-shun-xu-de-wen-ti">posted at 21:58</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonlibrary.html" rel="tag">python.library</a>
                     &nbsp;&middot;
                     &nbsp;<a href="/tag/python.html" class="tags">python</a>
                     &nbsp;<a href="/tag/pytest.html" class="tags">pytest</a>

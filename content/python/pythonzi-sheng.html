@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | python自省</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">9月 01, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/pythonzi-sheng" rel="bookmark" title="Permanent Link to &quot;python自省&quot;">python自省</a>
+                </h2>
+
+                
+                
+
+                <p>事实上，自省这个概念并没有这么复杂，只要是能够返回对象状态、类型等数据的操作，都能称之为自省，比如内置的<code>__str__</code>和<code>__repr__</code>方法，对于字典的<code>has_key()</code>，检查对象是否有某个属性的<code>hasattr(obj, attr)</code>等，这里会列出几个常见的，希望在编程时可以注意到提供适当的自省方法。</p>
+<h4>dir</h4>
+<p>它是用于自省的最重要的函数之一。它返回列出了一个对象所拥有的属性和方法的列表。如果运行<code>dir()</code>而不传入参数，那么它会返回当前作用域的所有名字。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="nb">dir</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="p">[</span><span class="s1">&#39;__add__&#39;</span><span class="p">,</span> <span class="s1">&#39;__class__&#39;</span><span class="p">,</span> <span class="s1">&#39;__contains__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delattr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__delslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span> <span class="s1">&#39;__eq__&#39;</span><span class="p">,</span> <span class="s1">&#39;__format__&#39;</span><span class="p">,</span> <span class="s1">&#39;__ge__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getattribute__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__getslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__gt__&#39;</span><span class="p">,</span> <span class="s1">&#39;__hash__&#39;</span><span class="p">,</span> <span class="s1">&#39;__iadd__&#39;</span><span class="p">,</span> <span class="s1">&#39;__imul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">,</span> <span class="s1">&#39;__le__&#39;</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">,</span> <span class="s1">&#39;__lt__&#39;</span><span class="p">,</span> <span class="s1">&#39;__mul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__ne__&#39;</span><span class="p">,</span> <span class="s1">&#39;__new__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reduce__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reduce_ex__&#39;</span><span class="p">,</span> <span class="s1">&#39;__repr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__reversed__&#39;</span><span class="p">,</span> <span class="s1">&#39;__rmul__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setattr__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setslice__&#39;</span><span class="p">,</span> <span class="s1">&#39;__sizeof__&#39;</span><span class="p">,</span> <span class="s1">&#39;__str__&#39;</span><span class="p">,</span> <span class="s1">&#39;__subclasshook__&#39;</span><span class="p">,</span> <span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="s1">&#39;extend&#39;</span><span class="p">,</span> <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;insert&#39;</span><span class="p">,</span> <span class="s1">&#39;pop&#39;</span><span class="p">,</span> <span class="s1">&#39;remove&#39;</span><span class="p">,</span> <span class="s1">&#39;reverse&#39;</span><span class="p">,</span> <span class="s1">&#39;sort&#39;</span><span class="p">]</span>
+</pre></div>
+
+
+<h4>id</h4>
+<p>返回一个对象唯一ID</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;Hello world!&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">59914112L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">59914112L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="il">59739040L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">c</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">==</span> <span class="n">c</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<h4>type与instance</h4>
+<p><code>type</code>可以只接收一个参数，并打印其未知的所属的类型，而<code>isinstance</code>只能判断是否属于某个已知类型，所以,如果我们需要知道一个对象是什么类型，使用<code>isinstance</code>效率更高一些.</p>
+<p><code>isinstance</code>可以判断子类对象是否继承于父类；而<code>type</code>不可以，type只能把类对象识别为<code>instance</code>实例类型，因为老式类都是通过<code>instance</code>创建的，而新式类(New-Style Class)是从python2.2开始，继承自Object的class(eg. <code>class A(object)</code>)，而python2.x中如果没有继承自object，则为老式类，而在python3.x中不管有没有继承都是新式类，因为python3.x中只有新式类。</p>
+<p>总的来说，<code>type</code>主要用于获取未知变量的类型，<code>isinstance</code>主要用于判断A类是否继承于B类</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">A</span><span class="p">():</span>
+    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="k">pass</span>
+<span class="n">b</span><span class="o">=</span><span class="n">B</span><span class="p">()</span>
+
+<span class="c1">#isinstance判断对象b是不是B的实例</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">B</span><span class="p">))</span>
+<span class="c1">#isinstance判断对象b是不是A的实例</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">A</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">B</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">==</span> <span class="n">A</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">上述代码在python2.x中（老式类）的结果为：</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">False</span>
+<span class="sd">False</span>
+<span class="sd">上述代码在python3.x中（新式类）的结果为：</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">True</span>
+<span class="sd">False</span>
+<span class="sd">可见判断对象类型（尤其是class对象），使用instance更好</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h4>inspect</h4>
+<p>详见<a href="https://docs.python.org/2/library/inspect.html">inspect — Inspect live objects</a></p>
+<h4>Reference</h4>
+<ul>
+<li><a href="https://docs.python.org/2/reference/datamodel.html#new-style-and-classic-classes">New-style and classic classes</a></li>
+</ul>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/pythonzi-sheng">posted at 14:35</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

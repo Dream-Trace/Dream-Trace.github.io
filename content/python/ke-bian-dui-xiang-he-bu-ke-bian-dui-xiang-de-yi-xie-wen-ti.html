@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+        <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | 可变对象和不可变对象的一些问题</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+
+    <meta name="keywords" content="python" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">11月 16, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/python/ke-bian-dui-xiang-he-bu-ke-bian-dui-xiang-de-yi-xie-wen-ti" rel="bookmark" title="Permanent Link to &quot;可变对象和不可变对象的一些问题&quot;">可变对象和不可变对象的一些问题</a>
+                </h2>
+
+                
+                
+
+                <h4>前言</h4>
+<p>如同名字一样，可变对象是指创建后其值可以被改变的对象（<code>list</code>, <code>dict</code>, <code>set</code>, etc.），而不可变对象则是指创建后值不可改变的对象（<code>number</code>, <code>string</code>, <code>tuple</code>, etc.）。
+这里说明了一些通常容易造成困惑的问题，并说明了可变/不可变对象区别的深入的原因是<code>python</code>是如何<code>parse</code>代码的，或者说字节码是如何执行的。</p>
+<h4>对象和id</h4>
+<p>在这之前，我们首先要了解什么是对象，请看下面代码：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+</pre></div>
+
+
+<p>那么问题是打印出来的<code>id</code>是谁的<code>id</code>？答案是整数<code>1</code>的<code>id</code>，而不是变量<code>a</code>的<code>id</code>，请记住这一点，为了防止被带偏，这是非常重要的。
+变量<code>a</code>和其它变量一样，都只是一个名字，类似于标识符一样的东西，<code>a = 1</code>是指：通过<code>=</code>号，将对象<code>1</code>绑定到了变量<code>a</code>上，仅此而已。在C语言中，<code>1</code>就仅仅是一个数字，但在<code>python</code>中，数字<code>1</code>是一个不可变对象，它甚至有自己的属性，这也是为什么从语法糖来说，<code>python</code>没有<code>++</code>这样的语法的原因。（当然，要支持<code>++</code>也是可以的，首先<code>int</code>类需要有个诸如<code>__selfadd__</code>的魔术方法，就像实现<code>+=</code>语法的<code>__iadd__</code>方法一样，之后编译时要支持<code>++</code>的语法，可以调用到该魔术方法，但是，从设计角度来说，<code>int</code>类从一开始就被设计成不可变对象，这也是<code>python</code>使用<code>for...in...</code>的语法而不是<code>for</code>的原因）</p>
+<h4>可变对象和不可变对象的定义</h4>
+<p>对于可变对象和不可变对象定义有个误解是把变量指向对象的<code>id</code>改变作为判断标准，认为只要<code>id</code>改变就是不可变对象，反之为可变对象，并且举出类似错误例子：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>    <span class="c1"># id(1)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>    <span class="c1"># id(2)</span>
+<span class="il">18441632L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+</pre></div>
+
+
+<p>现在你应该可以看出这个例子的疏漏之处，变量<code>a</code>前后指向不同的对象，<code>id</code>当然会改变，对于变量<code>a</code>，变量<code>b</code>对应的操作应该是这样：</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>    <span class="c1"># id([1])</span>
+<span class="il">44322632L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>    <span class="c1"># id([1, 2])</span>
+</pre></div>
+
+
+<p>可以看到<code>id</code>同样会改变，仔细观察<code>b</code>重新赋值的<code>id</code>，其值等于之前错例中的<code>id</code>，说明是同一对象。</p>
+<p>通过上面例子我们可以看到不同操作带来的影响，通过赋值来改变对象和通过对象的方法来改变对象是不同的，明白这一点是很重要的。</p>
+<h4>绑定</h4>
+<p>对于赋值来说，其实所有赋值都是引用（虽然<code>python</code>中似乎没有这种说法），比如<code>a = b</code>或者<code>a = 1</code>，与是否为可变或不可变对象无关，参数传递也是如此。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44355784L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="c1"># The [1] is not the above [1]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44355784L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44322632L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">18441656L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44419368L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44419368L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>       <span class="c1"># The 1 is the above 1, because of the integer pool</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">18441656L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">18441656L</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">5000</span>    <span class="c1"># The 5000 is not the above 5000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="il">44419392L</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="il">44419368L</span>
+</pre></div>
+
+
+<p>共有六组对比，第一二组，第三五组，第四六组说明了<code>=</code>右侧参数对于赋值的影响</p>
+<p>值得一提的是：后两组数据主要说明了<code>python</code>中整数池的影响，其范围为[-5，257)。</p>
+<p>对于第六组，有一个有趣的现象，只有在<code>command line</code>下运行才会出现该情况，如果是在文件或<code>command line</code>函数中定义，则<code>a</code>, <code>b</code>所指向的是同一个对象</p>
+<p>总之，如果不考虑整数池的影响，可变对象和不可变对象在赋值的时候（位于<code>=</code>号右侧）是没有差别的，只要<code>=</code>右侧参数同为对象或同为标识符，当然，在被赋值的时候，我们自然不能改变不可变对象其中的值，就像<code>(1, 2)</code>，甚至我们不能改变它的长度，但对于像<code>([1, 2], 3)</code>这样的不可变对象，我们当然可以改变其<code>[0]</code>项，因为<code>[1, 2]</code>本来就可变对象，就像<code>我的附庸的附庸，不是我的附庸</code>一样，外面<code>tuple</code>的不可变特性不能影响到里面<code>list</code>的可变性。</p>
+<h4>可变/不可变对象执行过程深入分析</h4>
+<p>从字节码角度说明了可变/不可变对象的区别，关于下面的内容你可能需要对<code>python</code>反汇编过程，字节码，和<code>dis</code>库有一定了解。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="mi">5000</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">5000</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+  <span class="mi">3</span>           <span class="mi">6</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+             <span class="mi">12</span> <span class="n">BINARY_ADD</span>
+             <span class="mi">13</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+             <span class="mi">16</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+             <span class="mi">19</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">`co_consts`是一个包含了函数体内的任意实数的元组，`co_consts[0]`固定为函数返回值，因为当前无返回值，所以为`None`，执行过程是`LOAD_CONST`将`co_consts[1]`即`5000`推入堆栈顶部；之后`STORE_FAST`将堆栈顶部(TOS)储存到`co_varnames[0]`即变量a，这一步就是将`1`绑定到变量`a`，`co_varnames`是一个包含了函数体内使用的任意本地变量名字的元组；`LOAD_FAST`将`co_varnames[0]`即变量a的引用推入堆栈顶部；`LOAD_CONST`将`co_consts[2]`即`1`推入堆栈顶部，`BINARY_ADD`执行`TOS = TOS1 + TOS`，实现相加；`STORE_FAST`再次将堆栈顶部(TOS)绑定到`co_varnames[0]`即变量a；最后`LOAD_CONST`, `RETURN_VALUE`将返回值推入堆栈顶部，并将TOS返回给函数的调用者。</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+              <span class="mi">3</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+              <span class="mi">9</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">与下面列表的初始化对比，不可变对象是一次`LOAD_CONST`全部内容，注意此时的`foo.__code__.co_consts`值和`LOAD_CONST`调用的参数</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="o">...</span>     <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">...</span>     <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="o">...</span>     <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dis</span><span class="o">.</span><span class="n">dis</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+  <span class="mi">2</span>           <span class="mi">0</span> <span class="n">LOAD_CONST</span>               <span class="mi">1</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+              <span class="mi">3</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <span class="mi">6</span> <span class="n">BUILD_LIST</span>               <span class="mi">2</span>
+              <span class="mi">9</span> <span class="n">STORE_FAST</span>               <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+  <span class="mi">3</span>          <span class="mi">12</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+             <span class="mi">15</span> <span class="n">LOAD_ATTR</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">append</span><span class="p">)</span>
+             <span class="mi">18</span> <span class="n">LOAD_CONST</span>               <span class="mi">3</span> <span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+             <span class="mi">21</span> <span class="n">CALL_FUNCTION</span>            <span class="mi">1</span>
+             <span class="mi">24</span> <span class="n">POP_TOP</span>
+
+  <span class="mi">4</span>          <span class="mi">25</span> <span class="n">LOAD_CONST</span>               <span class="mi">4</span> <span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+             <span class="mi">28</span> <span class="n">LOAD_FAST</span>                <span class="mi">0</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span>
+             <span class="mi">31</span> <span class="n">LOAD_CONST</span>               <span class="mi">2</span> <span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+             <span class="mi">34</span> <span class="n">STORE_SUBSCR</span>
+             <span class="mi">35</span> <span class="n">LOAD_CONST</span>               <span class="mi">0</span> <span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+             <span class="mi">38</span> <span class="n">RETURN_VALUE</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_consts</span>
+<span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span>
+<span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_names</span>
+<span class="p">(</span><span class="s1">&#39;append&#39;</span><span class="p">,)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">`co_names`是一个包含了函数体内引用的任意非本地名字的元组，比如这里使用的`append()`函数。</span>
+<span class="sd">从第三行开始：`LOAD_FAST`将`co_varnames[0]`即变量b的引用推入堆栈顶部，`LOAD_ATTR`将会使用`getattr(TOS, co_names[namei])`替换TOS，这里相当于`getattr(b, &#39;append&#39;)`，即获得列表`[1, 2]`的`append()`方法；之后`LOAD_CONST`将`co_consts[3]`即`3`推入堆栈顶部，之后`CALL_FUNCTION(1)`代表函数有一个位置参数，此时堆栈顶部包含位置参数，最右侧的参数在最顶部，参数下面是可调用对象，即`append()`，之后会弹出（pop）所有参数和可调用对象，使用这些参数调用可调用对象，并将返回值推入堆栈顶端；`POP_TOP`移除堆栈顶端的值，变量`b`所绑定对象的值在上一步就已经更改了。</span>
+<span class="sd">从第四行开始：`LOAD_CONST`将`co_consts[4]`即`4`推入堆栈顶部；`LOAD_FAST`将`co_varnames[0]`即变量b的引用推入堆栈顶部；`LOAD_CONST`将`co_consts[2]`即`2`推入堆栈顶部；`STORE_SUBSCR`执行`TOS1[TOS] = TOS2`即`[1, 2, 3][2] = 4`；最后`LOAD_CONST`, `RETURN_VALUE`将返回值推入堆栈顶部，并将TOS返回给函数的调用者。</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/python/ke-bian-dui-xiang-he-bu-ke-bian-dui-xiang-de-yi-xie-wen-ti">posted at 22:06</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">python</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                </div>
+            </article>
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>

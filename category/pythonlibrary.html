@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Dream&Trace blog | articles in the "python.library" category</title>
+    <link rel="shortcut icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+    <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    <meta name="generator" content="Pelican" />
+    <meta name="description" content="" />
+    <meta name="author" content="Dream&Trace" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+
+                <li class="ephemeral selected"><a href="/category/pythonlibrary.html">python.library</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/tags">Tags</a></li>
+                <li><a href="/categories">Categories</a></li>
+                <li><a href="/archives">Archives</a></li>
+            </ul>
+        </nav>
+        <div class="header_box">
+            <h1><a href="/">Dream&Trace blog</a></h1>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="content">            <h4 class="date">9月 22, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/pythonlibrary/Use-of-the-lxml-library" rel="bookmark" title="Permanent Link to &quot;lxml库的使用&quot;">lxml库的使用</a>
+                </h2>
+
+                
+                
+
+                <p>在<code>python</code>中，有多种方式读写xml或html，标准库<code>xml</code>中提供了<code>ElementTree</code>, <code>SAX</code>, <code>DOM</code>几种方式，其中<code>ElementTree</code>相当于简化版的<code>DOM</code>，会在内存中存储结构化数据，而<code>SAX</code>则是事件驱动的，在打开大型xml文件时，就内存占用来说，<code>DOM</code> &gt; <code>ElementTree</code> &gt;&gt; <code>SAX</code>，但是由于迭代器的存在，<code>ElementTree</code>可以使用<code>iterparse()</code>来循环遍历文件，大大减少内存占用；除此以外，<code>python</code>还有第三方库<code>lxml</code>，使用c语言编写，解析xml的时候，能自动处理各种编码问题，并且与<code>ElementTree</code>同样支持XPath。</p>
+<h3>lxml</h3>
+<p><code>lxml</code>库中有一部分<code>API</code>是原始<code>ElementTree</code>的 <code>API</code>,由Fredrik Lundh在<code>ElementTree</code>库中定义，另一部分<code>API</code>是由<code>ElementTree</code>拓展而来。</p>
+<h4>安装</h4>
+<p>linux下安装：</p>
+<div class="highlight"><pre><span></span>pip install lxml
+</pre></div>
+
+
+<p>windows下安装：
+大概有两种方法，第一种是在windows下安装整个编译链；第二种方法是下载<a href="https://www.lfd.uci.edu/~gohlke/pythonlibs/">Unofficial Windows Binaries for Python Extension Packages</a>上编译好的wheel文件，然后运行：</p>
+<div class="highlight"><pre><span></span>pip install your_lxml_wheel_file.whl
+</pre></div>
+
+
+<h4>The Element class</h4>
+<h5>Elements</h5>
+<p>我们可以使用<code>getroot()</code>, <code>getchildren()</code>, <code>getparent()</code>来获得根元素、子元素、父元素，<code>getprevious()</code>, <code>getnext()</code>获得前一个或后一个元素，除此以外，<code>lxml</code>还提供类似于列表（list）的操作方法，所以我们可以使用<code>[]</code>来获取元素。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1"># 读取xml文件</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>   <span class="c1"># 获取根元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;root node:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>   <span class="c1"># &lt;Element root at 0x2eab188&gt;</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;serialise the tree you have created:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">serialise the tree you have created:</span>
+<span class="sd">&lt;root version=&quot;1.2&quot; tag=&quot;test&quot;&gt;</span>
+<span class="sd">    &lt;head id=&quot;1&quot;&gt;</span>
+<span class="sd">        &lt;title&gt;test xml file&lt;/title&gt;</span>
+<span class="sd">    &lt;/head&gt;</span>
+<span class="sd">    &lt;body id=&quot;2&quot;&gt;</span>
+<span class="sd">        &lt;items id=&quot;2-1&quot;&gt;item1&lt;/items&gt;</span>
+<span class="sd">        &lt;items id=&quot;2-2&quot;&gt;item2&lt;/items&gt;</span>
+<span class="sd">        &lt;items id=&quot;2-3&quot;&gt;item3&lt;/items&gt;</span>
+<span class="sd">    &lt;/body&gt;</span>
+<span class="sd">&lt;/root&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 使用[]获取元素</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>   <span class="c1"># &lt;Element head at 0x2eab148&gt;</span>
+<span class="c1"># 甚至使用类似数组切片的语法来来选取（注意即使选取1位，返回也会是数组）</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="c1"># [&lt;Element body at 0x2eab108&gt;]</span>
+
+<span class="c1"># 获取子元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;children node:&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">getchildren</span><span class="p">():</span>     
+    <span class="k">print</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">children node:</span>
+<span class="sd">&lt;Element head at 0x2eab108&gt;</span>
+<span class="sd">&lt;Element body at 0x2eab148&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="c1"># 获取父元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Whether root is the parent node of root[0]:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span> <span class="ow">is</span> <span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getparent</span><span class="p">())</span>   <span class="c1"># True</span>
+
+<span class="c1"># 使用getprevious(), getnext()获得前一个或后一个元素</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;access next and previous elements&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">root</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">getprevious</span><span class="p">())</span>  <span class="c1"># True</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getnext</span><span class="p">())</span>      <span class="c1"># True  </span>
+</pre></div>
+
+
+<p>若xml文档比较大，还可以使用itergetchildren方法。该方法得到一个生成器。这里，你可以用dir(root)可以查得元素对象有什么方法。可以获取兄弟元素、父元素等方法。</p>
+<p>可以使用<code>Element()</code>和<code>SubElement()</code>生成新的元素或是子元素：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="c1"># 生成元素</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;root node:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>   <span class="c1"># &lt;Element root at 0x33bb0c8&gt;</span>
+
+<span class="c1"># 使用SubElement()生成子元素</span>
+<span class="n">child1</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;child1&quot;</span><span class="p">)</span>
+<span class="c1"># 生成带有attribute的子元素。Element()同理</span>
+<span class="n">child1</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;child2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Tom&quot;</span><span class="p">)</span>
+
+<span class="c1"># 也可以使用append()来生成子元素</span>
+<span class="n">root</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;child3&quot;</span><span class="p">))</span>
+
+<span class="c1"># insert()同理</span>
+<span class="n">root</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;child4&quot;</span><span class="p">))</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;serialise the tree you have created:&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">serialise the tree you have created:</span>
+<span class="sd">&lt;root&gt;</span>
+<span class="sd">  &lt;child4/&gt;</span>
+<span class="sd">  &lt;child1/&gt;</span>
+<span class="sd">  &lt;child2 name=&quot;Tom&quot;/&gt;</span>
+<span class="sd">  &lt;child3/&gt;</span>
+<span class="sd">&lt;/root&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 删除子节点</span>
+<span class="c1"># root.remove(child2)</span>
+
+<span class="c1"># 删除所有子节点</span>
+<span class="c1"># root.clear()</span>
+</pre></div>
+
+
+<h5>tag and attribute</h5>
+<p>tag即元素节点名称，可以使用其属性<code>tag</code>获取：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1">#读取xml文件</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>   <span class="c1"># 获取根元素</span>
+
+<span class="c1"># 获取子元素他的tag</span>
+<span class="k">print</span><span class="p">([</span> <span class="n">c</span><span class="o">.</span><span class="n">tag</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">root</span> <span class="p">])</span>   <span class="c1"># output:[&#39;head&#39;, &#39;body&#39;]</span>
+</pre></div>
+
+
+<p>attribute可以使用<code>get()</code>, <code>set()</code>方法来获取或修改，也可以使用类似于字典的语法来操作：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="c1"># 新建一个attribute</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">,</span> <span class="n">interesting</span><span class="o">=</span><span class="s2">&quot;totally&quot;</span><span class="p">,</span> <span class="n">hello</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>   <span class="c1"># &lt;root hello=&quot;python&quot; interesting=&quot;totally&quot;/&gt;</span>
+
+<span class="c1"># 获得一个attribute</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">))</span>      <span class="c1"># python</span>
+
+<span class="c1"># 新建或修改一个attribute</span>
+<span class="n">root</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="s2">&quot;lxml&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>   <span class="c1"># &lt;root hello=&quot;lxml&quot; interesting=&quot;totally&quot;/&gt;</span>
+
+<span class="c1"># 获得root所有的attribute的名称</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>    <span class="c1"># [&#39;hello&#39;, &#39;interesting&#39;]</span>
+
+<span class="c1"># 获得root所有的attribute的名称和值</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> = </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">hello = &#39;lxml&#39;</span>
+<span class="sd">interesting = &#39;totally&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 像操作字典一样操作attribute</span>
+<span class="n">attributes</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span>
+
+<span class="c1"># 获得root的一个attribute</span>
+<span class="k">print</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">])</span>   <span class="c1"># lxml</span>
+
+
+<span class="c1"># 获得root的一个不存在的attribute</span>
+<span class="k">print</span><span class="p">(</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no-such-attribute&quot;</span><span class="p">))</span>   <span class="c1"># None</span>
+
+<span class="c1"># # 新建或修改root的一个attribute</span>
+<span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">])</span>   <span class="c1"># python</span>
+</pre></div>
+
+
+<h5>text</h5>
+<p>一般来说，访问元素的text可以使用其<code>text</code>, <code>tail</code>属性，也可以使用<code>findtext()</code>, <code>alltext()</code>方法或是<code>tostring()</code>函数，其细微差别如下：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 除了读取文件以外，lxml可以解析字符串</span>
+<span class="n">xml_text</span> <span class="o">=</span> <span class="s1">&#39;&lt;xml&gt;&lt;body&gt;Hello&lt;br/&gt;World&lt;items&gt;item1&lt;/items&gt;&lt;/body&gt;&lt;/xml&gt;&#39;</span>
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_text</span><span class="p">)</span>
+<span class="n">body</span> <span class="o">=</span> <span class="n">xml</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">br</span> <span class="o">=</span> <span class="n">xml</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># 使用text属性获取该元素的文本，不包括其子元素中的文本</span>
+<span class="k">print</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>   <span class="c1"># None</span>
+<span class="c1"># 这里因为出现了混合内容的XML，text属性无法获得&#39;World&#39;文本</span>
+<span class="k">print</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>  <span class="c1"># Hello</span>
+<span class="c1"># 要获得&#39;World&#39;文本，需要取得&#39;br&#39;元素并使用tail属性来获得元素后面的文本，直到XML树中的下一个元素</span>
+<span class="k">print</span><span class="p">(</span><span class="n">br</span><span class="o">.</span><span class="n">tail</span><span class="p">)</span>    <span class="c1"># World</span>
+
+<span class="c1"># findtext()也可获取某一元素中的文本，但同样无法获得&#39;World&#39;文本</span>
+<span class="k">print</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">))</span>  <span class="c1"># Hello</span>
+<span class="c1"># &#39;xml&#39;中无&#39;items&#39;元素，故返回None</span>
+<span class="k">print</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>  <span class="c1"># None</span>
+
+<span class="c1"># itertext()可以获取元素和其子元素中所有文本</span>
+<span class="c1"># 获取&#39;body&#39;中的&#39;hello&#39;, &#39;World&#39;文本</span>
+<span class="n">bodytext</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">itertext</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bodytext</span><span class="p">)</span>  <span class="c1"># Hello World item1</span>
+<span class="c1"># 获取&#39;xml&#39;中所有文本</span>
+<span class="n">alltext</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">itertext</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="n">alltext</span><span class="p">)</span>   <span class="c1"># Hello World item1</span>
+
+<span class="c1"># 要获取元素和其子元素中全部的文本也可以使用带有&#39;method&#39;关键词的tostring()函数</span>
+<span class="n">alltext</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">xml</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>   <span class="c1"># HelloWorlditem1</span>
+<span class="k">print</span><span class="p">(</span><span class="n">alltext</span><span class="p">)</span>
+
+<span class="c1"># 生成该XML只需反过来对元素的属性赋值即可</span>
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span><span class="s2">&quot;xml&quot;</span><span class="p">)</span>
+<span class="n">body</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">xml</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">)</span>
+<span class="n">body</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;Hello&quot;</span>
+<span class="n">br</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="s2">&quot;br&quot;</span><span class="p">)</span>
+<span class="n">br</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;world&quot;</span>
+<span class="n">items</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="s2">&quot;items&quot;</span><span class="p">)</span>
+<span class="n">items</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;item1&quot;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">xml</span><span class="p">))</span>   <span class="c1"># &lt;xml&gt;&lt;body&gt;Hello&lt;br/&gt;world&lt;items&gt;item1&lt;/items&gt;&lt;/body&gt;&lt;/xml&gt;</span>
+</pre></div>
+
+
+<h5>XPath</h5>
+<p>你可以使用XPath语法来便利的提取元素</p>
+<p>XPath常用规则：
+| 表达式            | 描述                                       |
+|-------------------|--------------------------------------------|
+| nodename          | 选取此节点的所有子节点                     |
+| /                 | 从当前节点选取直接子节点                   |
+| //                | 从当前节点选取子孙节点                     |
+| .                 | 选取当前节点                               |
+| ..                | 选取当前节点的父节点                       |
+| @                 | 选取属性                                   |
+| *                 | 通配符，选择所有元素节点与元素名           |
+| @*                | 选取所有属性                               |
+| [@attrib]         | 选取具有给定属性的所有元素                 |
+| [@attrib='value'] | 选取给定属性具有给定值的所有元素           |
+| [tag]             | 选取所有具有指定元素的直接子节点           |
+| [tag='text']      | 选取所有具有指定元素并且文本内容是text节点 |</p>
+<p>详细的XPath语法规则请参阅：<a href="http://www.w3school.com.cn/xpath/xpath_syntax.asp">XPath 语法</a></p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span>
+
+<span class="c1"># 选取所有&#39;items&#39;元素</span>
+<span class="n">items</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//items&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>  <span class="c1"># [&lt;Element items at 0x2f5c048&gt;, &lt;Element items at 0x2f58fc8&gt;, &lt;Element items at 0x2f58f88&gt;]</span>
+<span class="c1"># 选取元素后进行任意操作，比如获取某一attribute等</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">2-1</span>
+<span class="sd">2-2</span>
+<span class="sd">2-3</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 选取所有包含属性id=&quot;2-2&quot;的items元素</span>
+<span class="nb">id</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//items[@id=&quot;2-2&quot;]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>   <span class="c1"># item2</span>
+
+<span class="c1"># 也可使用&#39;//items[2]&#39;形式，但为了避免选中错误的&#39;item&#39;，通常应该在前面加入可靠的上级节点名称(tag)</span>
+<span class="nb">id</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//body/items[2]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>   <span class="c1"># item2</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">无论结果如何返回都是列表，故需要写成list[0]形式</span>
+<span class="sd">这里有一个坑就是，如果没有找到该元素，会返回空列表&#39;[]&#39;，此时执行[][0]显然会报错</span>
+<span class="sd">所以凡是涉及到列表操作都要小心，甚至检查返回是否是列表，以增强代码的健壮性</span>
+<span class="sd">以上代码在实际应用过程中应该写成如下格式</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">xpath</span><span class="p">(</span><span class="s1">&#39;//items[@id=&quot;2-4&quot;]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="c1"># raise   # 不要抛出错误</span>
+    <span class="k">print</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>   <span class="c1"># None</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</pre></div>
+
+
+<h5>树迭代(Tree iteration)</h5>
+<p>如果你希望以递归方式遍历树并对其元素执行某些操作，树迭代(Tree iteration)是一种非常方便的解决方案。元素为此提供树迭代器iter()。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1"># 读取xml文件</span>
+
+<span class="c1"># 元素拥有iter()方法可以以递归方式遍历树并返回其所有子元素</span>
+<span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">iter</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">root -</span>
+
+<span class="sd">head -</span>
+
+<span class="sd">title - test xml file</span>
+<span class="sd">body -</span>
+
+<span class="sd">items - item1</span>
+<span class="sd">items - item2</span>
+<span class="sd">items - item3</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># 可以传入需要的元素名来过滤，结果就只会给出tag为&#39;root&#39;和&#39;head&#39;的元素</span>
+<span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">iter</span><span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">,</span> <span class="s2">&quot;head&quot;</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">root -</span>
+
+<span class="sd">head -</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h4>The ElementTree class</h4>
+<h5>Parse</h5>
+<p>lxml.etree支持以多种方式从所有重要来源解析XML，即字符串，文件，URL（http/ftp）和类文件对象。主要的解析函数是<code>fromstring()</code>和<code>parse()</code>。默认情况下，它们使用标准解析器，但您始终可以将不同的解析器作为第二个参数传递。如果要配置解析器，可以创建新实例，在解析时删除标记之间的空文本，这可以减少树的大小，并避免悬空尾文本。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">xml_file</span> <span class="o">=</span> <span class="s2">&quot;../temporary_files/module_lxml_parser.xml&quot;</span>
+<span class="n">xml_text</span> <span class="o">=</span> <span class="s1">&#39;&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;&#39;</span>
+
+
+<span class="c1"># 默认情况下解析不会处理标签间的空格</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XML</span><span class="p">(</span><span class="n">xml_text</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_text</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">xml_file</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">可以利用etree.XMLParser()创建一个解析器,</span>
+<span class="sd">在解析时删除标记之间的空文本，这可以减少树的大小，并避免悬空尾文本,</span>
+<span class="sd">注意，&lt;b&gt;标记内的空白内容未被删除，标签内内容往往是数据内容（即使是空白）,</span>
+<span class="sd">您可以通过遍历树轻松地在其他步骤中删除它</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XMLParser</span><span class="p">(</span><span class="n">remove_blank_text</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XML</span><span class="p">(</span><span class="n">xml_text</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_text</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">xml_file</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">output:</span>
+<span class="sd">&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;  &lt;a/&gt;   &lt;b&gt;  &lt;/b&gt;     &lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;&lt;a/&gt;&lt;b&gt;  &lt;/b&gt;&lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;&lt;a/&gt;&lt;b&gt;  &lt;/b&gt;&lt;/root&gt;</span>
+<span class="sd">&lt;root&gt;&lt;a/&gt;&lt;b&gt;  &lt;/b&gt;&lt;/root&gt;</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<h5>ElementPath</h5>
+<p>ElementTree库带有一个简单的类似XPath的路径语言，称为ElementPath。主要区别在于您可以在ElementPath表达式中使用{namespace}标记符号。但是，无法使用值比较和功能等高级功能。
+除了完整的XPath实现之外，lxml.etree以与ElementTree相同的方式支持ElementPath语言，甚至使用（几乎）相同的实现。 API提供了四种方法，您可以在Elements和ElementTrees上找到它们：</p>
+<blockquote>
+<ul>
+<li><code>iterfind()</code> iterates over all Elements that match the path expression</li>
+<li><code>findall()</code> returns a list of matching Elements</li>
+<li><code>find()</code> efficiently returns only the first match</li>
+<li><code>findtext()</code> returns the .text content of the first match</li>
+</ul>
+</blockquote>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;../temporary_files/module_test_xml_file.xml&#39;</span><span class="p">)</span> <span class="c1"># 读取xml文件</span>
+
+<span class="c1"># find()可以获得一个元素的子元素，但不包括子元素的子元素，finditer()和findall()同理</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">))</span>    <span class="c1"># &lt;Element body at 0x269a148&gt;</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>   <span class="c1"># None</span>
+<span class="c1"># 同时find()只会返回第一个匹配的元素</span>
+<span class="n">body</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">body</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>   <span class="c1"># &lt;Element items at 0x2697ac8&gt;</span>
+<span class="c1"># 为了获取&#39;root&#39;中的第一个&#39;items&#39;，我们可以使用ElementPath</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;.//items&#39;</span><span class="p">))</span>   <span class="c1"># &lt;Element items at 0x2697ac8&gt;</span>
+
+<span class="c1"># 要获得&#39;root&#39;中所有&#39;items&#39;，可以使用iterfind()，注意它会返回一个生成器</span>
+<span class="n">itemsGenerate</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">iterfind</span><span class="p">(</span><span class="s1">&#39;.//items&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">itemsGenerate</span><span class="p">)</span>    <span class="c1"># &lt;generator object at 0x0000000002608DC8&gt;</span>
+<span class="k">print</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">itemsGenerate</span><span class="p">])</span>
+<span class="c1"># output: [&lt;Element items at 0x2697ac8&gt;, &lt;Element items at 0x2697708&gt;, &lt;Element items at 0x26976c8&gt;]</span>
+
+<span class="c1"># findall()也可以达到同样效果，但它会返回一个列表</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;.//items&#39;</span><span class="p">))</span>
+<span class="c1"># output: [&lt;Element items at 0x2697ac8&gt;, &lt;Element items at 0x2697708&gt;, &lt;Element items at 0x26976c8&gt;]</span>
+
+<span class="c1"># 与find()不同，如果未找到元素，iterfind()返回的生成器不会yield任何值，而findall()返回空列表</span>
+<span class="n">itemsGenerate</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">iterfind</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">itemsGenerate</span><span class="p">)</span>    <span class="c1"># &lt;generator object at 0x0000000002608E58&gt;</span>
+<span class="k">print</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">itemsGenerate</span><span class="p">])</span>   <span class="c1"># []</span>
+<span class="c1"># print(root.iterfind(&#39;items&#39;))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;items&#39;</span><span class="p">))</span>   <span class="c1"># []</span>
+
+<span class="c1"># findtext()于Elements.text章中介绍过</span>
+</pre></div>
+
+
+<h4>Reference</h4>
+<p>关于Serialisation和Namespaces请参阅官方教程<a href="https://lxml.de/tutorial.html">The lxml.etree Tutorial</a></p>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/pythonlibrary/Use-of-the-lxml-library">posted at 10:51</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonlibrary.html" rel="tag">python.library</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/lxml.html" class="tags">lxml</a>
+                    &nbsp;<a href="/tag/xml.html" class="tags">xml</a>
+                    &nbsp;<a href="/tag/html.html" class="tags">html</a>
+                </div>
+            </article>            <h4 class="date">9月 16, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/pythonlibrary/pipenvshi-yong-jin-jie" rel="bookmark" title="Permanent Link to &quot;pipenv使用进阶&quot;">pipenv使用进阶</a>
+                </h2>
+
+                
+                
+
+                <h4>自定义虚拟环境的路径</h4>
+<p><code>pipenv</code>使用<code>pew</code>来管理虚拟环境的路径，我们可以自定义<code>WORKON_HOME</code>环境变量来设置虚拟环境的路径，或者使用<code>pipenv</code>内置的环境变量<code>PIPENV_VENV_IN_PROJECT</code>，将虚拟环境设置在每个项目的根目录下的<code>.venv</code>文件夹。</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">WORKON_HOME</span><span class="o">=</span>~/.venvs       <span class="c1"># default: ~/.virtualenvs/test-Shuk7a5m</span>
+<span class="c1"># or</span>
+<span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>   <span class="c1"># %project_root_path%/.venv</span>
+</pre></div>
+
+
+<p><code>bash</code>配置在<code>.bashrc</code>或<code>.bash_profile</code>中，<code>Zsh</code>配置在<code>.zshrc</code>，其它<code>Shell</code>以此类推，也可直接写入系统环境变量。</p>
+<h4>自动激活虚拟环境</h4>
+<p>配合<code>autoenv</code>或<code>virtualenv-autodetect</code>可实现自动激活环境，和设置<code>PIPENV_VENV_IN_PROJECT</code>环境变量可以自动激活虚拟环境。</p>
+<p>在.bashrc或.bash_profile中配置如下</p>
+<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PIPENV_VENV_IN_PROJECT</span><span class="o">=</span><span class="m">1</span>
+<span class="nb">source</span> /path/to/virtualenv-autodetect.sh
+</pre></div>
+
+
+<p>如果使用了oh-my-zsh, 可以直接使用它的插件形式</p>
+<div class="highlight"><pre><span></span><span class="c1"># 安装插件</span>
+$ git@github.com:RobertDeRose/virtualenv-autodetect.git ~/.oh-my-zsh/custom/plugins
+</pre></div>
+
+
+<p>再修改.zshrc文件启动插件</p>
+<div class="highlight"><pre><span></span><span class="c1"># 找到启动plugins的行添加启用插件</span>
+<span class="nv">plugins</span><span class="o">=(</span>... virtualenv-autodetect<span class="o">)</span>
+</pre></div>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/pythonlibrary/pipenvshi-yong-jin-jie">posted at 17:03</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonlibrary.html" rel="tag">python.library</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/technicalbasics.html" class="tags">technicalBasics</a>
+                </div>
+            </article>            <h4 class="date">7月 06, 2018</h4>
+
+            <article class="post">
+                <h2 class="title">
+                    <a href="/content/pythonlibrary/pytestcan-shu-hua-shun-xu-de-wen-ti" rel="bookmark" title="Permanent Link to &quot;pytest参数化顺序的问题&quot;">pytest参数化顺序的问题</a>
+                </h2>
+
+                
+                
+
+                <h4>pytest参数化顺序的问题</h4>
+<p>假设现在我们有个函数需要赋值<code>x</code>、<code>y</code>，然后每次输出<code>(x, y)</code>，利用<code>parametrize</code>，我们可能会这样写。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pytest</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">((</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="k">def</span> <span class="nf">test_foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</pre></div>
+
+
+<p>虽然这样定义输出顺序一目了然，但仔细想想，其中<code>x</code>、<code>y</code>都有重复的值，如果有三项、四项或是更多的参数和值，光编写代码都需要很长的时间，而且我们需要手动将其全排列，还可能会漏掉某项。事实上，当要获得多个参数化参数的所有组合，我们可以堆栈<code>parametrize</code>装饰器，但是要注意定义<code>parametrize</code>装饰器的先后不同在具体执行上会有细微差别，造成输出的顺序会有所不同。</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pytest</span>
+<span class="c1"># No.1 Define x first and then define y</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">test_foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;output:</span>
+<span class="sd">PS E:\python\pytest&gt; pytest -v -s</span>
+<span class="sd">============================= test session starts =============================</span>
+<span class="sd">platform win32 -- Python 2.7.13, pytest-3.4.0, py-1.5.2, pluggy-0.6.0 -- c:\python27\python.exe</span>
+<span class="sd">cachedir: .pytest_cache</span>
+<span class="sd">rootdir: E:\python\pytest, inifile:</span>
+<span class="sd">collected 6 items</span>
+
+<span class="sd">test_ mark_parametrize.py::test_foo[7-0] (0, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[7-1] (1, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[8-0] (0, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[8-1] (1, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[9-0] (0, 9)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[9-1] (1, 9)</span>
+<span class="sd">PASSED</span>
+
+<span class="sd">========================== 6 passed in 0.02 seconds ===========================</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="c1"># No.2 Define y first and then define x</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="nd">@pytest.mark.parametrize</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">test_foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;output:</span>
+<span class="sd">PS E:\python\pytest&gt; pytest -v -s</span>
+<span class="sd">============================= test session starts =============================</span>
+<span class="sd">platform win32 -- Python 2.7.13, pytest-3.4.0, py-1.5.2, pluggy-0.6.0 -- c:\python27\python.exe</span>
+<span class="sd">cachedir: .pytest_cache</span>
+<span class="sd">rootdir: E:\python\pytest, inifile:</span>
+<span class="sd">collected 6 items</span>
+
+<span class="sd">test_ mark_parametrize.py::test_foo[0-7] (0, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[0-8] (0, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[0-9] (0, 9)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[1-7] (1, 7)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[1-8] (1, 8)</span>
+<span class="sd">PASSED</span>
+<span class="sd">test_ mark_parametrize.py::test_foo[1-9] (1, 9)</span>
+<span class="sd">PASSED</span>
+
+<span class="sd">========================== 6 passed in 0.03 seconds ===========================</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+
+<p>上面的两种方法，只有第二种输出的顺序与一开始相同。观察上面两种方法输出内容的不同，我们可理解为：
+先定义<code>x=[0, 1]</code>后定义<code>y=[7, 8, 9]</code>时可看作共执行<code>len(y)</code>次（即3次），每次执行都会遍历<code>x</code>，相当于如下语句:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">y_value</span> <span class="ow">in</span> <span class="n">y</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">x_value</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+        <span class="c1"># do someing, such as</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">x_value</span><span class="p">,</span> <span class="n">y_value</span><span class="p">)</span>
+</pre></div>
+
+
+<p>先定义<code>y=[7, 8, 9]</code>后定义<code>x=[0, 1]</code>时可看作共执行<code>len(x)</code>次（即2次），每次执行都会遍历<code>y</code>，相当于如下语句:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">x_value</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">y_value</span> <span class="ow">in</span> <span class="n">y</span><span class="p">:</span>
+        <span class="c1"># do someing, such as</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">x_value</span><span class="p">,</span> <span class="n">y_value</span><span class="p">)</span>
+</pre></div>
+
+
+<p>所以说参数化过程是一种先进后出的堆栈，但对于顺序有要求时需要注意这一点。</p>
+<h4>Reference</h4>
+<ul>
+<li><a href="https://docs.pytest.org/en/latest/parametrize.html#pytest-mark-parametrize">Parametrizing fixtures and test functions</a></li>
+</ul>
+                <div class="clear"></div>
+
+                <div class="info">
+                    <a href="/content/pythonlibrary/pytestcan-shu-hua-shun-xu-de-wen-ti">posted at 21:58</a>
+                    &nbsp;&middot;&nbsp;<a href="/category/pythonlibrary.html" rel="tag">python.library</a>
+                    &nbsp;&middot;
+                    &nbsp;<a href="/tag/python.html" class="tags">python</a>
+                    &nbsp;<a href="/tag/pytest.html" class="tags">pytest</a>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <footer>
+                <p>
+                <a href="https://github.com/jody-frankowski/blue-penguin">Blue Penguin</a> Theme
+                &middot;
+                Powered by <a href="http://getpelican.com">Pelican</a>
+            </footer>
+        </div>
+        <div class="clear"></div>
+    </div>
+</body>
+</html>
